@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ShoppingCart, ChevronDown } from 'lucide-react';
+import { useStore } from '@/store/useStore';
 
 interface HeaderProps {
   cartCount?: number;
@@ -11,11 +12,20 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ cartCount = 0, activeTab = 'Meals' }) => {
   const navItems = ['Dashboard', 'Meals', 'Orders', 'Subscription'];
+  const { user } = useStore();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const displayName = mounted ? user.name.split(' ')[0] : 'Kasun';
+  const displayInitial = mounted ? user.name.charAt(0).toUpperCase() : 'K';
 
   return (
     <header className="w-full bg-[#F9F8F6] border-b border-stone-200/60 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-        
+
         {/* Left: Brand Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
           <div className="w-10 h-10 rounded-full bg-[#0D5C53] flex items-center justify-center text-white font-bold text-base shadow-sm group-hover:bg-[#09433D] transition-colors">
@@ -34,11 +44,10 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0, activeTab = 'Meal
               <Link
                 key={item}
                 href={item === 'Meals' ? '/meal-plans' : `/${item.toLowerCase()}`}
-                className={`text-sm font-medium transition-colors relative py-1 ${
-                  isActive
+                className={`text-sm font-medium transition-colors relative py-1 ${isActive
                     ? 'text-[#0D5C53] font-semibold'
                     : 'text-gray-600 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 {item}
                 {isActive && (
@@ -62,13 +71,13 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0, activeTab = 'Meal
           </button>
 
           {/* User Profile Pill */}
-          <div className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity">
+          <Link href="/profile" className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity">
             <div className="w-8 h-8 rounded-full bg-[#0D5C53] text-white flex items-center justify-center font-bold text-sm shadow-sm">
-              K
+              {displayInitial}
             </div>
-            <span className="text-sm font-medium text-gray-800">Kasun</span>
+            <span className="text-sm font-medium text-gray-800">{displayName}</span>
             <ChevronDown className="w-4 h-4 text-gray-500" />
-          </div>
+          </Link>
         </div>
 
       </div>
