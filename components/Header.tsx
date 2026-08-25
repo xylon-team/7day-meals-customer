@@ -68,14 +68,14 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0, activeTab = 'Meal
         {/* Right: Cart, User Profile & Logout */}
         <div className="flex items-center gap-4">
           {/* Shopping Cart Icon */}
-          <button className="relative text-gray-700 hover:text-[#0D5C53] p-2 transition-colors cursor-pointer" aria-label="Shopping Cart">
+          <Link href="/cart" className="relative text-gray-700 hover:text-[#0D5C53] p-2 transition-colors cursor-pointer" aria-label="Shopping Cart">
             <ShoppingCart className="w-5 h-5 stroke-[1.8]" />
             {cartCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-[#0D5C53] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-scale-in">
                 {cartCount}
               </span>
             )}
-          </button>
+          </Link>
 
           {/* User Profile Pill */}
           {mounted && (isAuthenticated || true) && (
