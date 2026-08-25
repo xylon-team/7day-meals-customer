@@ -33,6 +33,7 @@ const DEFAULT_USER: User = {
 // Global singleton state object
 const globalState = {
   user: DEFAULT_USER,
+  isAuthenticated: false,
 };
 
 // Subscriptions set
@@ -45,17 +46,31 @@ if (typeof window !== 'undefined') {
     if (saved) {
       globalState.user = JSON.parse(saved);
     }
+    const authSaved = localStorage.getItem('7day_meals_auth');
+    if (authSaved) {
+      globalState.isAuthenticated = JSON.parse(authSaved);
+    }
   } catch (e) {
-    console.error('Failed to load user state from localStorage:', e);
+    console.error('Failed to load state from localStorage:', e);
   }
 }
 
+function notifyListeners() {
+  listeners.forEach((listener) => listener());
+}
+
 export function useStore() {
-  const [state, setState] = useState({ user: globalState.user });
+  const [state, setState] = useState({
+    user: globalState.user,
+    isAuthenticated: globalState.isAuthenticated,
+  });
 
   useEffect(() => {
     const listener = () => {
-      setState({ user: globalState.user });
+      setState({
+        user: globalState.user,
+        isAuthenticated: globalState.isAuthenticated,
+      });
     };
     listeners.add(listener);
     return () => {
@@ -68,7 +83,7 @@ export function useStore() {
       ...globalState.user,
       ...updates,
     };
-    
+
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('7day_meals_user', JSON.stringify(globalState.user));
@@ -76,9 +91,8 @@ export function useStore() {
         console.error('Failed to save user state to localStorage:', e);
       }
     }
-    
-    // Notify all active hooks
-    listeners.forEach((listener) => listener());
+
+    notifyListeners();
   };
 
   const updateNotifications = (updates: Partial<UserNotifications>) => {
@@ -98,25 +112,65 @@ export function useStore() {
       }
     }
 
-    listeners.forEach((listener) => listener());
+    notifyListeners();
+  };
+
+  const login = (userData: Partial<User>) => {
+    globalState.user = {
+      ...DEFAULT_USER,
+      ...userData,
+    };
+    globalState.isAuthenticated = true;
+
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('7day_meals_user', JSON.stringify(globalState.user));
+        localStorage.setItem('7day_meals_auth', JSON.stringify(true));
+      } catch (e) {
+        console.error('Failed to save auth state to localStorage:', e);
+      }
+    }
+
+    notifyListeners();
+  };
+
+  const logout = () => {
+    globalState.user = DEFAULT_USER;
+    globalState.isAuthenticated = false;
+
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('7day_meals_user');
+        localStorage.removeItem('7day_meals_auth');
+      } catch (e) {
+        console.error('Failed to clear auth state from localStorage:', e);
+      }
+    }
+
+    notifyListeners();
   };
 
   const resetStore = () => {
     globalState.user = DEFAULT_USER;
+    globalState.isAuthenticated = false;
     if (typeof window !== 'undefined') {
       try {
         localStorage.removeItem('7day_meals_user');
+        localStorage.removeItem('7day_meals_auth');
       } catch (e) {
         console.error('Failed to remove user state from localStorage:', e);
       }
     }
-    listeners.forEach((listener) => listener());
+    notifyListeners();
   };
 
   return {
     user: state.user,
+    isAuthenticated: state.isAuthenticated,
     updateUser,
     updateNotifications,
+    login,
+    logout,
     resetStore,
   };
 }
