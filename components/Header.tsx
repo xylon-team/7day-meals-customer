@@ -11,9 +11,9 @@ interface HeaderProps {
   activeTab?: string;
 }
 
-export const Header: React.FC<HeaderProps> = ({ cartCount = 0, activeTab = 'Meals' }) => {
+export const Header: React.FC<HeaderProps> = ({ cartCount, activeTab = 'Meals' }) => {
   const navItems = ['Dashboard', 'Meals', 'Orders', 'Subscription'];
-  const { user, isAuthenticated, logout } = useStore();
+  const { user, isAuthenticated, logout, cart } = useStore();
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
@@ -23,6 +23,10 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0, activeTab = 'Meal
 
   const displayName = mounted ? user.name.split(' ')[0] : 'Kasun';
   const displayInitial = mounted ? user.name.charAt(0).toUpperCase() : 'K';
+
+  const displayCartCount = cartCount !== undefined 
+    ? cartCount 
+    : (mounted ? cart.reduce((sum, item) => sum + item.quantity, 0) : 0);
 
   const handleLogout = () => {
     logout();
@@ -68,14 +72,14 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0, activeTab = 'Meal
         {/* Right: Cart, User Profile & Logout */}
         <div className="flex items-center gap-4">
           {/* Shopping Cart Icon */}
-          <button className="relative text-gray-700 hover:text-[#0D5C53] p-2 transition-colors cursor-pointer" aria-label="Shopping Cart">
+          <Link href="/cart" className="relative text-gray-700 hover:text-[#0D5C53] p-2 transition-colors cursor-pointer" aria-label="Shopping Cart">
             <ShoppingCart className="w-5 h-5 stroke-[1.8]" />
-            {cartCount > 0 && (
+            {displayCartCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-[#0D5C53] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-scale-in">
-                {cartCount}
+                {displayCartCount}
               </span>
             )}
-          </button>
+          </Link>
 
           {/* User Profile Pill */}
           {mounted && (isAuthenticated || true) && (
