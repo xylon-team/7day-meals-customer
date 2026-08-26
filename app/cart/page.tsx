@@ -1,58 +1,21 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Trash2, Minus, Plus, ArrowRight } from 'lucide-react';
-
-const INITIAL_CART_ITEMS = [
-  {
-    id: 1,
-    name: 'Chicken Rice & Curry',
-    category: 'Lunch',
-    price: 1200,
-    quantity: 1,
-    image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=150&auto=format&fit=crop'
-  },
-  {
-    id: 2,
-    name: 'Fish Ambul Thiyal Dinner',
-    category: 'Dinner',
-    price: 1400,
-    quantity: 1,
-    image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=150&auto=format&fit=crop'
-  },
-  {
-    id: 3,
-    name: 'Kottu Roti (Chicken)',
-    category: 'Dinner',
-    price: 1300,
-    quantity: 1,
-    image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=150&auto=format&fit=crop'
-  }
-];
+import { useStore } from '@/store/useStore';
 
 export default function CartPage() {
-  const [cartItems, setCartItems] = useState(INITIAL_CART_ITEMS);
+  const { cart, updateQuantity, removeItem, clearCart } = useStore();
+  const [mounted, setMounted] = useState(false);
 
-  const updateQuantity = (id: number, delta: number) => {
-    setCartItems(items => items.map(item => {
-      if (item.id === id) {
-        const newQuantity = Math.max(1, item.quantity + delta);
-        return { ...item, quantity: newQuantity };
-      }
-      return item;
-    }));
-  };
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  const removeItem = (id: number) => {
-    setCartItems(items => items.filter(item => item.id !== id));
-  };
-
-  const clearCart = () => {
-    setCartItems([]);
-  };
+  const cartItems = mounted ? cart : [];
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const total = subtotal; // Assuming free delivery as per design
