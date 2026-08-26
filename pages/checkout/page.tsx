@@ -11,11 +11,62 @@ import {
   CalendarDays,
   CreditCard,
   CheckCircle2,
+  XCircle,
   ChevronRight,
   ArrowLeft,
   Package,
   ClipboardList,
 } from 'lucide-react';
+
+// ─── Payment Toast ────────────────────────────────────────────────────────────
+
+type ToastState = { type: 'success' | 'error'; message: string } | null;
+
+function PaymentToast({ toast, onDismiss }: { toast: ToastState; onDismiss: () => void }) {
+  if (!toast) return null;
+
+  const isSuccess = toast.type === 'success';
+
+  return (
+    <div
+      className={`fixed bottom-6 right-6 z-50 flex items-start gap-3 px-5 py-4 rounded-2xl shadow-xl border
+        text-sm font-medium max-w-sm w-full animate-slide-up
+        ${
+          isSuccess
+            ? 'bg-[#0D5C53] text-white border-teal-600/40'
+            : 'bg-rose-600 text-white border-rose-500/40'
+        }`}
+      role="alert"
+      aria-live="assertive"
+    >
+      {/* Icon */}
+      <div className="shrink-0 mt-0.5">
+        {isSuccess ? (
+          <CheckCircle2 className="w-5 h-5 text-teal-200" />
+        ) : (
+          <XCircle className="w-5 h-5 text-rose-200" />
+        )}
+      </div>
+
+      {/* Message */}
+      <div className="flex-1 leading-snug">
+        <p className="font-semibold">{isSuccess ? 'Payment Successful!' : 'Payment Failed'}</p>
+        <p className={`text-xs mt-0.5 ${isSuccess ? 'text-teal-100' : 'text-rose-100'}`}>
+          {toast.message}
+        </p>
+      </div>
+
+      {/* Dismiss */}
+      <button
+        onClick={onDismiss}
+        aria-label="Dismiss notification"
+        className="shrink-0 opacity-70 hover:opacity-100 transition-opacity cursor-pointer mt-0.5"
+      >
+        <XCircle className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -528,6 +579,7 @@ export default function CheckoutPage() {
 
   const [currentStep, setCurrentStep] = useState<Step>('delivery');
   const [orderRef, setOrderRef] = useState('');
+  const [toast, setToast] = useState<ToastState>(null);
 
   const [delivery, setDelivery] = useState<DeliveryFormData>({
     address: '',
@@ -550,11 +602,30 @@ export default function CheckoutPage() {
   }, [user]);
 
   const handleConfirmPayment = () => {
-    // Generate an order reference
-    const ref = `#ORD-${Math.floor(1000 + Math.random() * 9000)}`;
-    setOrderRef(ref);
-    setCurrentStep('confirmation');
-    clearCart();
+    // Simulate payment outcome: 70% success, 30% failure
+    const isSuccess = Math.random() > 0.3;
+
+    if (isSuccess) {
+      const ref = `#ORD-${Math.floor(1000 + Math.random() * 9000)}`;
+      setOrderRef(ref);
+      setToast({
+        type: 'success',
+        message: 'Your order has been placed. We are preparing your meals!',
+      });
+      // Short delay so the toast is visible before transitioning
+      setTimeout(() => {
+        setCurrentStep('confirmation');
+        clearCart();
+        setToast(null);
+      }, 2000);
+    } else {
+      setToast({
+        type: 'error',
+        message: 'Your card was declined. Please check your details and try again.',
+      });
+      // Auto-dismiss error toast after 4 s
+      setTimeout(() => setToast(null), 4000);
+    }
   };
 
   const handleTrackOrder = () => {
@@ -567,6 +638,9 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-[#F9F8F6] text-gray-900 flex flex-col font-sans selection:bg-[#0D5C53] selection:text-white">
+      {/* Payment Toast */}
+      <PaymentToast toast={toast} onDismiss={() => setToast(null)} />
+
       {/* Header */}
       <Header activeTab="Orders" />
 
