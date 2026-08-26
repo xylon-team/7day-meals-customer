@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { MealCard } from './components/MealCard';
@@ -8,17 +8,23 @@ import { FilterBar, CategoryFilter, SortOption } from './components/FilterBar';
 import { SearchBar } from './components/SearchBar';
 import { MEAL_PLANS, MealPlan } from '@/lib/data/meal-plans';
 import { ShoppingBag, Sparkles } from 'lucide-react';
+import { useStore } from '@/store/useStore';
 
 export default function MealPlansPage() {
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortBy, setSortBy] = useState<SortOption>('popularity');
-  const [cart, setCart] = useState<MealPlan[]>([]);
+  const { cart, addToCart } = useStore();
+  const [mounted, setMounted] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Add item to cart
   const handleAddToCart = (plan: MealPlan) => {
-    setCart((prev) => [...prev, plan]);
+    addToCart(plan);
     setToastMessage(`"${plan.title}" added to cart!`);
     setTimeout(() => {
       setToastMessage(null);
@@ -61,7 +67,7 @@ export default function MealPlansPage() {
       )}
 
       {/* Navigation Header */}
-      <Header cartCount={cart.length} activeTab="Meals" />
+      <Header cartCount={mounted ? cart.reduce((sum, item) => sum + item.quantity, 0) : 0} activeTab="Meals" />
 
       {/* Main Content Body */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">

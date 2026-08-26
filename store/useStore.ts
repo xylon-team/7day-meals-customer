@@ -17,6 +17,15 @@ export interface User {
   notifications: UserNotifications;
 }
 
+export interface CartItem {
+  id: string | number;
+  name: string;
+  category: string;
+  price: number;
+  quantity: number;
+  image: string;
+}
+
 const DEFAULT_USER: User = {
   name: 'Kasun Peiris',
   email: 'kasun.peiris@gmail.com',
@@ -34,6 +43,7 @@ const DEFAULT_USER: User = {
 const globalState = {
   user: DEFAULT_USER,
   isAuthenticated: false,
+  cart: [] as CartItem[],
 };
 
 // Subscriptions set
@@ -50,10 +60,24 @@ if (typeof window !== 'undefined') {
     if (authSaved) {
       globalState.isAuthenticated = JSON.parse(authSaved);
     }
+    const cartSaved = localStorage.getItem('7day_meals_cart');
+    if (cartSaved) {
+      globalState.cart = JSON.parse(cartSaved);
+    }
   } catch (e) {
     console.error('Failed to load state from localStorage:', e);
   }
 }
+
+const saveCartToLocalStorage = () => {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('7day_meals_cart', JSON.stringify(globalState.cart));
+    } catch (e) {
+      console.error('Failed to save cart state to localStorage:', e);
+    }
+  }
+};
 
 function notifyListeners() {
   listeners.forEach((listener) => listener());
@@ -63,6 +87,7 @@ export function useStore() {
   const [state, setState] = useState({
     user: globalState.user,
     isAuthenticated: globalState.isAuthenticated,
+    cart: globalState.cart,
   });
 
   useEffect(() => {
@@ -70,6 +95,7 @@ export function useStore() {
       setState({
         user: globalState.user,
         isAuthenticated: globalState.isAuthenticated,
+        cart: [...globalState.cart],
       });
     };
     listeners.add(listener);
@@ -153,10 +179,12 @@ export function useStore() {
   const resetStore = () => {
     globalState.user = DEFAULT_USER;
     globalState.isAuthenticated = false;
+    globalState.cart = [];
     if (typeof window !== 'undefined') {
       try {
         localStorage.removeItem('7day_meals_user');
         localStorage.removeItem('7day_meals_auth');
+        localStorage.removeItem('7day_meals_cart');
       } catch (e) {
         console.error('Failed to remove user state from localStorage:', e);
       }
@@ -164,13 +192,64 @@ export function useStore() {
     notifyListeners();
   };
 
+  const addToCart = (item: any) => {
+    const id = item.id;
+    const name = item.title || item.name;
+    const category = item.category;
+    const price = item.price;
+    const image = item.image;
+
+    const existingIndex = globalState.cart.findIndex((i) => i.id === id);
+    if (existingIndex > -1) {
+      globalState.cart[existingIndex] = {
+        ...globalState.cart[existingIndex],
+        quantity: globalState.cart[existingIndex].quantity + 1,
+      };
+    } else {
+      globalState.cart.push({ id, name, category, price, image, quantity: 1 });
+    }
+
+    saveCartToLocalStorage();
+    notifyListeners();
+  };
+
+  const updateQuantity = (id: string | number, delta: number) => {
+    const existingIndex = globalState.cart.findIndex((i) => i.id === id);
+    if (existingIndex > -1) {
+      const newQty = Math.max(1, globalState.cart[existingIndex].quantity + delta);
+      globalState.cart[existingIndex] = {
+        ...globalState.cart[existingIndex],
+        quantity: newQty,
+      };
+      saveCartToLocalStorage();
+      notifyListeners();
+    }
+  };
+
+  const removeItem = (id: string | number) => {
+    globalState.cart = globalState.cart.filter((i) => i.id !== id);
+    saveCartToLocalStorage();
+    notifyListeners();
+  };
+
+  const clearCart = () => {
+    globalState.cart = [];
+    saveCartToLocalStorage();
+    notifyListeners();
+  };
+
   return {
     user: state.user,
     isAuthenticated: state.isAuthenticated,
+    cart: state.cart,
     updateUser,
     updateNotifications,
     login,
     logout,
     resetStore,
+    addToCart,
+    updateQuantity,
+    removeItem,
+    clearCart,
   };
 }
