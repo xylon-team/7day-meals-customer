@@ -10,6 +10,7 @@ export interface UserNotifications {
 }
 
 export interface User {
+  customer_id?: number;
   name: string;
   email: string;
   phone: string;
@@ -27,10 +28,10 @@ export interface CartItem {
 }
 
 const DEFAULT_USER: User = {
-  name: 'Kasun Peiris',
-  email: 'kasun.peiris@gmail.com',
-  phone: '+94 77 123 4567',
-  address: '123 Galle Road, Colombo 03, Sri Lanka',
+  name: '',
+  email: '',
+  phone: '',
+  address: '',
   notifications: {
     orderUpdates: true,
     subscriptionAlerts: true,
@@ -43,6 +44,7 @@ const DEFAULT_USER: User = {
 const globalState = {
   user: DEFAULT_USER,
   isAuthenticated: false,
+  token: null as string | null,
   cart: [] as CartItem[],
 };
 
@@ -52,14 +54,25 @@ const listeners = new Set<() => void>();
 // Load from localStorage safely on the client
 if (typeof window !== 'undefined') {
   try {
-    const saved = localStorage.getItem('7day_meals_user');
-    if (saved) {
-      globalState.user = JSON.parse(saved);
-    }
     const authSaved = localStorage.getItem('7day_meals_auth');
-    if (authSaved) {
-      globalState.isAuthenticated = JSON.parse(authSaved);
+    const tokenSaved = localStorage.getItem('7day_meals_token');
+    
+    if (authSaved && JSON.parse(authSaved) === true) {
+      if (tokenSaved) {
+        globalState.isAuthenticated = true;
+        globalState.token = tokenSaved;
+        const saved = localStorage.getItem('7day_meals_user');
+        if (saved) {
+          globalState.user = JSON.parse(saved);
+        }
+      } else {
+        // Migration: Old mock data didn't have a token.
+        // Clear it so the user is properly logged out.
+        localStorage.removeItem('7day_meals_auth');
+        localStorage.removeItem('7day_meals_user');
+      }
     }
+    
     const cartSaved = localStorage.getItem('7day_meals_cart');
     if (cartSaved) {
       globalState.cart = JSON.parse(cartSaved);
@@ -87,6 +100,7 @@ export function useStore() {
   const [state, setState] = useState({
     user: globalState.user,
     isAuthenticated: globalState.isAuthenticated,
+    token: globalState.token,
     cart: globalState.cart,
   });
 
@@ -95,6 +109,7 @@ export function useStore() {
       setState({
         user: globalState.user,
         isAuthenticated: globalState.isAuthenticated,
+        token: globalState.token,
         cart: [...globalState.cart],
       });
     };
@@ -141,17 +156,23 @@ export function useStore() {
     notifyListeners();
   };
 
-  const login = (userData: Partial<User>) => {
+  /**
+   * Called after a successful login or register.
+   * Stores the JWT token and user data.
+   */
+  const login = (userData: Partial<User>, accessToken: string) => {
     globalState.user = {
       ...DEFAULT_USER,
       ...userData,
     };
     globalState.isAuthenticated = true;
+    globalState.token = accessToken;
 
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('7day_meals_user', JSON.stringify(globalState.user));
         localStorage.setItem('7day_meals_auth', JSON.stringify(true));
+        localStorage.setItem('7day_meals_token', accessToken);
       } catch (e) {
         console.error('Failed to save auth state to localStorage:', e);
       }
@@ -160,14 +181,29 @@ export function useStore() {
     notifyListeners();
   };
 
+  /** Updates only the token (e.g. after change-password returns a new token). */
+  const updateToken = (accessToken: string) => {
+    globalState.token = accessToken;
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('7day_meals_token', accessToken);
+      } catch (e) {
+        console.error('Failed to save token to localStorage:', e);
+      }
+    }
+    notifyListeners();
+  };
+
   const logout = () => {
     globalState.user = DEFAULT_USER;
     globalState.isAuthenticated = false;
+    globalState.token = null;
 
     if (typeof window !== 'undefined') {
       try {
         localStorage.removeItem('7day_meals_user');
         localStorage.removeItem('7day_meals_auth');
+        localStorage.removeItem('7day_meals_token');
       } catch (e) {
         console.error('Failed to clear auth state from localStorage:', e);
       }
@@ -179,11 +215,13 @@ export function useStore() {
   const resetStore = () => {
     globalState.user = DEFAULT_USER;
     globalState.isAuthenticated = false;
+    globalState.token = null;
     globalState.cart = [];
     if (typeof window !== 'undefined') {
       try {
         localStorage.removeItem('7day_meals_user');
         localStorage.removeItem('7day_meals_auth');
+        localStorage.removeItem('7day_meals_token');
         localStorage.removeItem('7day_meals_cart');
       } catch (e) {
         console.error('Failed to remove user state from localStorage:', e);
@@ -241,8 +279,10 @@ export function useStore() {
   return {
     user: state.user,
     isAuthenticated: state.isAuthenticated,
+    token: state.token,
     cart: state.cart,
     updateUser,
+    updateToken,
     updateNotifications,
     login,
     logout,

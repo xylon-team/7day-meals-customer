@@ -14,17 +14,17 @@ const INFO_ITEMS = [
   {
     icon: Inbox,
     title: 'Check your inbox',
-    desc: "We'll email a secure reset link to your registered address.",
+    desc: "We'll email a 4-digit OTP code to your registered address. It's valid for 5 minutes.",
   },
   {
     icon: ShieldCheck,
     title: 'Safe and secure',
-    desc: 'The link expires after a short time to keep your account protected.',
+    desc: 'The OTP expires quickly to keep your account protected. Request a new one anytime.',
   },
   {
     icon: Zap,
     title: 'Back to your meals fast',
-    desc: 'Reset your password in seconds and pick up right where you left off.',
+    desc: 'Enter the OTP on the Reset Password page and set your new password in seconds.',
   },
 ];
 
@@ -48,10 +48,15 @@ export default function ForgotPasswordPage() {
     }
 
     setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsLoading(false);
-    setSubmitted(true);
+    try {
+      const { apiForgotPassword } = await import('@/lib/api/auth');
+      await apiForgotPassword({ email: email.trim() });
+      setSubmitted(true);
+    } catch (err: any) {
+      setEmailError(err.message ?? 'Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -133,11 +138,11 @@ export default function ForgotPasswordPage() {
                   <CheckCircle className="w-8 h-8 text-[#0D5C53]" />
                 </div>
                 <div>
-                  <h2 className="font-serif text-2xl font-bold text-gray-900">Check your inbox</h2>
+                  <h2 className="font-serif text-2xl font-bold text-gray-900">OTP sent!</h2>
                   <p className="mt-2 text-sm text-stone-500 max-w-xs mx-auto leading-relaxed">
-                    We sent a password reset link to{' '}
+                    We sent a 4-digit OTP code to{' '}
                     <span className="font-semibold text-gray-800">{email}</span>.
-                    It may take a moment to arrive.
+                    Enter it on the next page to reset your password.
                   </p>
                 </div>
                 <p className="text-xs text-stone-400">
@@ -147,14 +152,14 @@ export default function ForgotPasswordPage() {
                     onClick={() => { setSubmitted(false); }}
                     className="font-semibold text-[#0D5C53] hover:text-[#09433D] transition-colors cursor-pointer"
                   >
-                    Try again
+                    Resend OTP
                   </button>
                 </p>
                 <Link
-                  href="/login"
-                  className="inline-block mt-2 text-sm font-semibold text-[#0D5C53] hover:text-[#09433D] transition-colors"
+                  href={`/reset-password?email=${encodeURIComponent(email)}`}
+                  className="inline-block mt-2 text-sm font-bold text-white bg-[#0D5C53] hover:bg-[#09433D] px-6 py-2.5 rounded-full transition-colors"
                 >
-                  ← Back to Sign In
+                  Enter OTP →
                 </Link>
               </div>
             ) : (

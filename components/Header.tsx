@@ -13,7 +13,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ cartCount, activeTab = 'Meals' }) => {
   const navItems = ['Dashboard', 'Meals', 'Orders', 'Subscription'];
-  const { user, isAuthenticated, logout, cart } = useStore();
+  const { user, isAuthenticated, token, logout, cart } = useStore();
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
@@ -21,14 +21,23 @@ export const Header: React.FC<HeaderProps> = ({ cartCount, activeTab = 'Meals' }
     setMounted(true);
   }, []);
 
-  const displayName = mounted ? user.name.split(' ')[0] : 'Kasun';
-  const displayInitial = mounted ? user.name.charAt(0).toUpperCase() : 'K';
+  const displayName = mounted ? user.name.split(' ')[0] : '';
+  const displayInitial = mounted ? (user.name.charAt(0).toUpperCase() || '?') : '?';
 
   const displayCartCount = cartCount !== undefined 
     ? cartCount 
     : (mounted ? cart.reduce((sum, item) => sum + item.quantity, 0) : 0);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Best-effort: notify backend to invalidate the token version
+    if (token) {
+      try {
+        const { apiLogout } = await import('@/lib/api/auth');
+        await apiLogout(token);
+      } catch {
+        // Ignore errors — local logout still proceeds
+      }
+    }
     logout();
     router.push('/login');
   };
@@ -82,7 +91,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount, activeTab = 'Meals' }
           </Link>
 
           {/* User Profile Pill */}
-          {mounted && (isAuthenticated || true) && (
+          {mounted && isAuthenticated && (
             <Link href="/profile" className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity">
               <div className="w-8 h-8 rounded-full bg-[#0D5C53] text-white flex items-center justify-center font-bold text-sm shadow-sm">
                 {displayInitial}
