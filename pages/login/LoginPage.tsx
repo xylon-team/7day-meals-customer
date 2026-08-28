@@ -56,26 +56,31 @@ export default function LoginPage() {
     setIsLoading(true);
     setErrors({});
 
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 900));
+    try {
+      const { apiLogin } = await import('@/lib/api/auth');
+      const data = await apiLogin({ email: email.trim(), password });
 
-    // For demo: any valid credentials work. In production this would call the backend.
-    const firstName = email.split('@')[0];
-    const displayName = firstName.charAt(0).toUpperCase() + firstName.slice(1) + ' (Customer)';
+      login(
+        {
+          customer_id: data.customer.customer_id,
+          name: `${data.customer.fname} ${data.customer.lname}`,
+          email: data.customer.email,
+          phone: '',
+          address: '',
+        },
+        data.access_token,
+      );
 
-    login({
-      name: displayName,
-      email: email.trim(),
-      phone: '',
-      address: '',
-    });
+      setSuccessMessage('Signed in successfully! Redirecting…');
 
-    setSuccessMessage('Signed in successfully! Redirecting…');
-    setIsLoading(false);
-
-    setTimeout(() => {
-      router.push('/');
-    }, 800);
+      setTimeout(() => {
+        router.push('/');
+      }, 800);
+    } catch (err: any) {
+      setErrors({ general: err.message ?? 'Login failed. Please try again.' });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
