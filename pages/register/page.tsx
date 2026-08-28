@@ -100,24 +100,42 @@ export default function RegisterPage() {
     setIsLoading(true);
     setErrors({});
 
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const { apiRegister, apiLogin } = await import('@/lib/api/auth');
 
-    const fullName = `${firstName.trim()} ${lastName.trim()}`;
+      await apiRegister({
+        fname: firstName.trim(),
+        lname: lastName.trim(),
+        email: email.trim(),
+        password,
+        phone_number: phone.trim(),
+        address_line_1: address.trim() || undefined,
+      });
 
-    login({
-      name: fullName,
-      email: email.trim(),
-      phone: phone.trim(),
-      address: address.trim(),
-    });
+      // Auto-login after registration
+      const data = await apiLogin({ email: email.trim(), password });
 
-    setSuccessMessage('Account created! Redirecting to your meal plans…');
-    setIsLoading(false);
+      login(
+        {
+          customer_id: data.customer.customer_id,
+          name: `${data.customer.fname} ${data.customer.lname}`,
+          email: data.customer.email,
+          phone: phone.trim(),
+          address: address.trim(),
+        },
+        data.access_token,
+      );
 
-    setTimeout(() => {
-      router.push('/');
-    }, 900);
+      setSuccessMessage('Account created! Redirecting to your meal plans…');
+
+      setTimeout(() => {
+        router.push('/');
+      }, 900);
+    } catch (err: any) {
+      setErrors({ general: err.message ?? 'Registration failed. Please try again.' } as any);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -205,6 +223,14 @@ export default function RegisterPage() {
               <div className="mb-5 flex items-center gap-3 bg-[#0D5C53] text-white text-sm font-medium px-4 py-3 rounded-xl">
                 <CheckCircle className="w-4 h-4 text-teal-200 shrink-0" />
                 {successMessage}
+              </div>
+            )}
+
+            {/* General error */}
+            {(errors as any).general && (
+              <div className="mb-5 flex items-center gap-3 bg-rose-50 border border-rose-200 text-rose-700 text-sm px-4 py-3 rounded-xl">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                {(errors as any).general}
               </div>
             )}
 

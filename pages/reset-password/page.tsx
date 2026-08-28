@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, AlertCircle, CheckCircle, Lock, RefreshCw, Shield } from 'lucide-react';
 import { PublicHeader } from '@/components/PublicHeader';
 import { Footer } from '@/components/Footer';
@@ -50,24 +50,47 @@ const INFO_ITEMS = [
 // ─── Component ─────────────────────────────────────────────────────────────────
 export default function ResetPasswordPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  // In production this email would come from the reset token in the URL query param.
-  const demoEmail = 'kasun@gmail.com';
+  // Email comes from the ?email= query param set by the forgot-password page
+  const [emailFromUrl, setEmailFromUrl] = useState('');
+  const [email, setEmail] = useState('');
 
-  const [password, setPassword]               = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword]       = useState(false);
-  const [showConfirm, setShowConfirm]         = useState(false);
-  const [passwordError, setPasswordError]     = useState<string | null>(null);
-  const [confirmError, setConfirmError]       = useState<string | null>(null);
-  const [isLoading, setIsLoading]             = useState(false);
-  const [success, setSuccess]                 = useState(false);
+  useEffect(() => {
+    const emailParam = searchParams?.get('email') ?? '';
+    setEmailFromUrl(emailParam);
+    setEmail(emailParam);
+  }, [searchParams]);
+
+  const [otp, setOtp]                                 = useState('');
+  const [password, setPassword]                       = useState('');
+  const [confirmPassword, setConfirmPassword]         = useState('');
+  const [showPassword, setShowPassword]               = useState(false);
+  const [showConfirm, setShowConfirm]                 = useState(false);
+  const [otpError, setOtpError]                       = useState<string | null>(null);
+  const [passwordError, setPasswordError]             = useState<string | null>(null);
+  const [confirmError, setConfirmError]               = useState<string | null>(null);
+  const [generalError, setGeneralError]               = useState<string | null>(null);
+  const [isLoading, setIsLoading]                     = useState(false);
+  const [success, setSuccess]                         = useState(false);
 
   const strengthScore  = getStrengthScore(password);
   const allCriteriaMet = strengthScore === CRITERIA.length;
 
   const validate = (): boolean => {
     let valid = true;
+
+    if (!email.trim()) {
+      setGeneralError('Email address is missing. Please go back to the Forgot Password page.');
+      valid = false;
+    }
+
+    if (!otp.trim() || otp.trim().length !== 4) {
+      setOtpError('Please enter the 4-digit OTP sent to your email.');
+      valid = false;
+    } else {
+      setOtpError(null);
+    }
 
     if (!password) {
       setPasswordError('Password is required.');
@@ -94,14 +117,24 @@ export default function ResetPasswordPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setGeneralError(null);
     if (!validate()) return;
 
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsLoading(false);
-    setSuccess(true);
-
-    setTimeout(() => router.push('/login'), 2500);
+    try {
+      const { apiResetPassword } = await import('@/lib/api/auth');
+      await apiResetPassword({
+        email: email.trim(),
+        otp: otp.trim(),
+        new_password: password,
+      });
+      setSuccess(true);
+      setTimeout(() => router.push('/login'), 2500);
+    } catch (err: any) {
+      setGeneralError(err.message ?? 'Failed to reset password. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -133,7 +166,7 @@ export default function ResetPasswordPage() {
               </p>
             </div>
             <p className="text-stone-400 text-sm leading-relaxed max-w-xs">
-              Choose a strong password you haven&apos;t used before, and you&apos;ll be right back to browsing your weekly meals.
+              Enter the OTP we sent to your email and choose a strong new password.
             </p>
 
             {/* Info items */}
@@ -166,11 +199,11 @@ export default function ResetPasswordPage() {
 
             {/* Back link */}
             <Link
-              href="/login"
+              href="/forgot-password"
               className="inline-flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-700 font-medium mb-8 transition-colors group"
             >
               <span className="group-hover:-translate-x-0.5 transition-transform">←</span>
-              Back to Sign In
+              Back to Forgot Password
             </Link>
 
             {success ? (
@@ -198,12 +231,76 @@ export default function ResetPasswordPage() {
                 <div className="mb-7">
                   <h2 className="font-serif text-3xl font-bold text-gray-900">Reset Password</h2>
                   <p className="mt-1.5 text-sm text-stone-500">
-                    Create a new strong password for{' '}
-                    <span className="font-semibold text-gray-700">{demoEmail}</span>
+                    {emailFromUrl ? (
+                      <>
+                        Enter the OTP sent to{' '}
+                        <span className="font-semibold text-gray-700">{emailFromUrl}</span>{' '}
+                        and create a new password.
+                      </>
+                    ) : (
+                      'Enter the OTP from your email and create a new password.'
+                    )}
                   </p>
                 </div>
 
+                {/* General error */}
+                {generalError && (
+                  <div className="mb-5 flex items-center gap-3 bg-rose-50 border border-rose-200 text-rose-700 text-sm px-4 py-3 rounded-xl">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    {generalError}
+                  </div>
+                )}
+
                 <form onSubmit={handleSubmit} noValidate className="space-y-5">
+
+                  {/* Email field (pre-filled, editable) */}
+                  {!emailFromUrl && (
+                    <div>
+                      <label htmlFor="reset-email" className="block text-sm font-semibold text-gray-800 mb-1.5">
+                        Email Address
+                      </label>
+                      <input
+                        id="reset-email"
+                        type="email"
+                        autoComplete="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="kasun@gmail.com"
+                        className="w-full border border-stone-300 rounded-xl px-4 py-3 text-sm text-gray-900 bg-white placeholder-stone-400 focus:outline-none focus:ring-2 focus:border-[#0D5C53] focus:ring-[#0D5C53]/15 transition-all"
+                      />
+                    </div>
+                  )}
+
+                  {/* OTP field */}
+                  <div>
+                    <label htmlFor="reset-otp" className="block text-sm font-semibold text-gray-800 mb-1.5">
+                      OTP Code
+                      <span className="ml-1.5 text-xs font-normal text-stone-400">(4-digit code from your email)</span>
+                    </label>
+                    <input
+                      id="reset-otp"
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={4}
+                      value={otp}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/\D/g, '').slice(0, 4);
+                        setOtp(v);
+                        if (otpError) setOtpError(null);
+                      }}
+                      placeholder="e.g. 1234"
+                      className={`w-full border rounded-xl px-4 py-3 text-sm text-gray-900 bg-white placeholder-stone-400 focus:outline-none focus:ring-2 transition-all tracking-widest text-center text-lg font-bold ${
+                        otpError
+                          ? 'border-rose-400 focus:ring-rose-200'
+                          : 'border-stone-300 focus:border-[#0D5C53] focus:ring-[#0D5C53]/15'
+                      }`}
+                    />
+                    {otpError && (
+                      <p className="mt-1.5 text-xs text-rose-600 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3 shrink-0" /> {otpError}
+                      </p>
+                    )}
+                  </div>
 
                   {/* New Password */}
                   <div>

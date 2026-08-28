@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 export default function ProfilePage() {
-  const { user, updateUser, updateNotifications, resetStore } = useStore();
+  const { user, token, updateUser, updateToken, updateNotifications, resetStore } = useStore();
   const [activeTab, setActiveTab] = useState('personal');
   const [mounted, setMounted] = useState(false);
 
@@ -69,7 +69,8 @@ export default function ProfilePage() {
     showToast('Personal information saved successfully!');
   };
 
-  const handleUpdatePassword = (e: React.FormEvent) => {
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentPassword || !newPassword || !confirmPassword) {
       showToast('Please fill in all password fields.', 'error');
@@ -79,16 +80,31 @@ export default function ProfilePage() {
       showToast('New passwords do not match.', 'error');
       return;
     }
-    if (newPassword.length < 6) {
-      showToast('New password must be at least 6 characters.', 'error');
+    if (newPassword.length < 8) {
+      showToast('New password must be at least 8 characters.', 'error');
       return;
     }
 
-    // Simulate API update
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    showToast('Password updated successfully!');
+    if (!token) {
+      showToast('You are not authenticated. Please log in again.', 'error');
+      return;
+    }
+
+    try {
+      const { apiChangePassword } = await import('@/lib/api/auth');
+      const result = await apiChangePassword(
+        { current_password: currentPassword, new_password: newPassword },
+        token,
+      );
+      // Backend returns a fresh token after password change
+      updateToken(result.access_token);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      showToast('Password updated successfully!');
+    } catch (err: any) {
+      showToast(err.message ?? 'Failed to update password. Please try again.', 'error');
+    }
   };
 
   const handleToggleNotification = (key: keyof typeof user.notifications) => {
