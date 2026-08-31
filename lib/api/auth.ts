@@ -150,3 +150,57 @@ export async function apiChangePassword(
     token,
   );
 }
+
+// ─── Profile API ──────────────────────────────────────────────────────────────
+
+export interface CustomerProfile {
+  customer_id: number;
+  fname: string;
+  lname: string;
+  phone_number: string;
+  latitude: number | null;
+  longitude: number | null;
+  address_line_1: string | null;
+  address_line_2: string | null;
+  is_active: boolean;
+  is_deleted: boolean;
+  registration_date: string;
+  customer_credential?: {
+    email: string;
+  };
+}
+
+export interface UpdateCustomerPayload {
+  fname?: string;
+  lname?: string;
+  phone_number?: string;
+  address_line_1?: string;
+  address_line_2?: string;
+}
+
+/** GET /customer/:id */
+export async function apiGetProfile(id: number, token?: string): Promise<CustomerProfile> {
+  return request<CustomerProfile>(`/customer/${id}`, { method: 'GET' }, token);
+}
+
+/** PATCH /customer/:id */
+export async function apiUpdateProfile(
+  id: number,
+  payload: UpdateCustomerPayload,
+  token?: string,
+): Promise<CustomerProfile> {
+  return request<CustomerProfile>(
+    `/customer/${id}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    },
+    token,
+  );
+}
+
+/** DELETE /customer/:id */
+export async function apiDeleteProfile(id: number, token?: string): Promise<MessageResponse> {
+  return request<MessageResponse>(`/customer/${id}`, { method: 'DELETE' }, token);
+}
+

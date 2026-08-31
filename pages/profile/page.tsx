@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/Button';
@@ -18,15 +19,19 @@ import {
 } from 'lucide-react';
 
 export default function ProfilePage() {
-  const { user, token, updateUser, updateToken, updateNotifications, resetStore } = useStore();
+  const { user, token, isAuthenticated, updateUser, updateToken, updateNotifications, resetStore } = useStore();
   const [activeTab, setActiveTab] = useState('personal');
   const [mounted, setMounted] = useState(false);
+  const router = useRouter();
 
   // Personal Info Form State
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Security Form State
   const [currentPassword, setCurrentPassword] = useState('');
@@ -40,15 +45,62 @@ export default function ProfilePage() {
   // Danger Zone confirmation modal state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (mounted && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [mounted, isAuthenticated, router]);
+
+  // Fetch latest profile from backend on mount
   useEffect(() => {
     setMounted(true);
-    if (user) {
-      setName(user.name);
-      setEmail(user.email);
-      setPhone(user.phone);
-      setAddress(user.address);
-    }
-  }, [user]);
+  }, []);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (mounted && isAuthenticated && user?.customer_id) {
+        setIsLoadingProfile(true);
+        try {
+          const { apiGetProfile } = await import('@/lib/api/auth');
+          const profile = await apiGetProfile(user.customer_id, token || undefined);
+
+          const formattedName = `${profile.fname} ${profile.lname}`.trim();
+          const emailAddr = profile.customer_credential?.email || user.email;
+          const phoneNum = profile.phone_number || '';
+          const fullAddress = [profile.address_line_1, profile.address_line_2]
+            .filter(Boolean)
+            .join('\n');
+
+          updateUser({
+            name: formattedName,
+            email: emailAddr,
+            phone: phoneNum,
+            address: fullAddress,
+          });
+
+          setFirstName(profile.fname || '');
+          setLastName(profile.lname || '');
+          setEmail(emailAddr);
+          setPhone(phoneNum);
+          setAddress(fullAddress);
+        } catch (err: any) {
+          showToast(err.message ?? 'Failed to load profile from server.', 'error');
+        } finally {
+          setIsLoadingProfile(false);
+        }
+      } else if (mounted && user) {
+        const parts = (user.name || '').trim().split(/\s+/);
+        setFirstName(parts[0] || '');
+        setLastName(parts.slice(1).join(' ') || '');
+        setEmail(user.email);
+        setPhone(user.phone);
+        setAddress(user.address);
+      }
+    };
+
+    fetchProfile();
+  }, [mounted, isAuthenticated, user?.customer_id]);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToastMessage(message);
@@ -59,16 +111,52 @@ export default function ProfilePage() {
     return () => clearTimeout(timer);
   };
 
-  const handleSavePersonalInfo = (e: React.FormEvent) => {
+  const handleSavePersonalInfo = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim()) {
-      showToast('Name and Email are required.', 'error');
+    if (!firstName.trim() || !lastName.trim() || !email.trim()) {
+      showToast('First Name, Last Name, and Email are required.', 'error');
       return;
     }
-    updateUser({ name, email, phone, address });
-    showToast('Personal information saved successfully!');
-  };
 
+    if (!user?.customer_id) {
+      showToast('User ID not found. Please log in again.', 'error');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Address splitting (address_line_1 gets first line, address_line_2 gets the rest)
+      const lines = address.trim().split('\n');
+      const address_line_1 = lines[0]?.trim() || '';
+      const address_line_2 = lines.slice(1).join(', ').trim() || '';
+
+      const { apiUpdateProfile } = await import('@/lib/api/auth');
+      await apiUpdateProfile(
+        user.customer_id,
+        {
+          fname: firstName.trim(),
+          lname: lastName.trim(),
+          phone_number: phone.trim(),
+          address_line_1,
+          address_line_2: address_line_2 || undefined,
+        },
+        token || undefined,
+      );
+
+      updateUser({
+        name: `${firstName.trim()} ${lastName.trim()}`.trim(),
+        email,
+        phone,
+        address,
+      });
+
+      showToast('Personal information saved successfully!');
+    } catch (err: any) {
+      showToast(err.message ?? 'Failed to update profile.', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,13 +201,25 @@ export default function ProfilePage() {
     showToast('Notification settings updated!');
   };
 
-  const handleDeleteAccount = () => {
-    resetStore();
-    setShowDeleteModal(false);
-    showToast('Account successfully deleted (simulated reset).');
+  const handleDeleteAccount = async () => {
+    if (!user?.customer_id) return;
+
+    try {
+      const { apiDeleteProfile } = await import('@/lib/api/auth');
+      await apiDeleteProfile(user.customer_id, token || undefined);
+
+      resetStore();
+      setShowDeleteModal(false);
+      showToast('Account successfully deleted.');
+      router.push('/login');
+    } catch (err: any) {
+      showToast(err.message ?? 'Failed to delete account. Please try again.', 'error');
+      setShowDeleteModal(false);
+    }
   };
 
-  if (!mounted) {
+
+  if (!mounted || isLoadingProfile) {
     return (
       <div className="min-h-screen bg-[#F9F8F6] flex flex-col items-center justify-center font-sans">
         <div className="w-10 h-10 border-4 border-[#0D5C53] border-t-transparent rounded-full animate-spin"></div>
@@ -225,7 +325,7 @@ export default function ProfilePage() {
 
                   <div className="flex items-center gap-5 mb-8">
                     <div className="w-22 h-22 bg-[#00b4a2] text-gray-950 rounded-full flex items-center justify-center font-bold text-3xl select-none shrink-0 shadow-sm">
-                      {name ? name.charAt(0).toUpperCase() : 'K'}
+                      {firstName ? firstName.charAt(0).toUpperCase() : 'K'}
                     </div>
                     <div className="flex flex-col items-start gap-1.5">
                       <button className="bg-[#F2F1EC] hover:bg-[#EAE9E4] text-stone-800 font-bold px-4.5 py-2.5 rounded-full text-xs transition-colors cursor-pointer shadow-sm">
@@ -241,16 +341,31 @@ export default function ProfilePage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-xs font-bold text-gray-950 mb-2">
-                          Full Name
+                          First Name
                         </label>
                         <input
                           type="text"
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          placeholder="e.g. Kasun Peiris"
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                          placeholder="e.g. Kasun"
                           className="w-full bg-[#F5F4F0] border border-transparent rounded-xl px-4.5 py-3.5 text-sm text-gray-900 focus:outline-none focus:bg-white focus:border-[#0D5C53] focus:ring-2 focus:ring-[#0D5C53]/10 transition-all"
                         />
                       </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-950 mb-2">
+                          Last Name
+                        </label>
+                        <input
+                          type="text"
+                          value={lastName}
+                          onChange={(e) => setLastName(e.target.value)}
+                          placeholder="e.g. Peiris"
+                          className="w-full bg-[#F5F4F0] border border-transparent rounded-xl px-4.5 py-3.5 text-sm text-gray-900 focus:outline-none focus:bg-white focus:border-[#0D5C53] focus:ring-2 focus:ring-[#0D5C53]/10 transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-xs font-bold text-gray-950 mb-2">
                           Email Address
@@ -258,14 +373,11 @@ export default function ProfilePage() {
                         <input
                           type="email"
                           value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          placeholder="e.g. kasun@example.com"
-                          className="w-full bg-[#F5F4F0] border border-transparent rounded-xl px-4.5 py-3.5 text-sm text-gray-900 focus:outline-none focus:bg-white focus:border-[#0D5C53] focus:ring-2 focus:ring-[#0D5C53]/10 transition-all"
+                          readOnly
+                          title="Email address cannot be changed"
+                          className="w-full bg-[#F5F4F0] border border-transparent rounded-xl px-4.5 py-3.5 text-sm text-gray-500 cursor-not-allowed focus:outline-none opacity-80"
                         />
                       </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-xs font-bold text-gray-950 mb-2">
                           Phone Number
@@ -296,9 +408,12 @@ export default function ProfilePage() {
                     <div className="pt-6 border-t border-stone-200/50 flex justify-end">
                       <button
                         type="submit"
-                        className="bg-[#0D5C53] hover:bg-[#09433D] text-white font-bold px-6 py-3.5 rounded-full text-xs shadow-sm flex items-center gap-2 cursor-pointer transition-colors active:scale-95 duration-150"
+                        disabled={isSaving}
+                        className={`bg-[#0D5C53] hover:bg-[#09433D] text-white font-bold px-6 py-3.5 rounded-full text-xs shadow-sm flex items-center gap-2 cursor-pointer transition-colors active:scale-95 duration-150 ${
+                          isSaving ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
                       >
-                        <Save className="w-4 h-4" /> Save Changes
+                        <Save className="w-4 h-4" /> {isSaving ? 'Saving Changes...' : 'Save Changes'}
                       </button>
                     </div>
                   </form>
