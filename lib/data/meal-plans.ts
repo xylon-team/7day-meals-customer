@@ -1,13 +1,14 @@
 export interface MealPlan {
   id: string;
   title: string;
-  category: 'Vegetarian' | 'Non-Veg' | 'Vegan' | 'Gluten-Free';
+  category: 'Vegetarian' | 'Non-Veg' | 'Vegan' | 'Gluten-Free' | string;
   price: number;
   image: string;
   items: string[];
   status: 'Available' | 'Sold Out' | 'Limited';
   popularity: number;
   description?: string;
+  apiData?: any;
 }
 
 export const MEAL_PLANS: MealPlan[] = [
