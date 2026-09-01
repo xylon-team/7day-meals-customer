@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
@@ -8,6 +9,7 @@ import { Trash2, Minus, Plus, ArrowRight } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 
 export default function CartPage() {
+  const router = useRouter();
   const { cart, updateQuantity, removeItem, clearCart } = useStore();
   const [mounted, setMounted] = useState(false);
 
@@ -149,7 +151,11 @@ export default function CartPage() {
                 </button>
               </div>
               
-              <button className="w-full bg-[#0B7A75] hover:bg-[#09635E] text-white py-4 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-[0_4px_14px_0_rgba(11,122,117,0.39)] hover:shadow-[0_6px_20px_rgba(11,122,117,0.23)] hover:-translate-y-[1px]">
+              <button 
+                onClick={() => router.push('/checkout')}
+                disabled={cartItems.length === 0}
+                className="w-full bg-[#0B7A75] hover:bg-[#09635E] text-white py-4 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-[0_4px_14px_0_rgba(11,122,117,0.39)] hover:shadow-[0_6px_20px_rgba(11,122,117,0.23)] hover:-translate-y-[1px] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+              >
                 <span className="text-[16px]">Proceed to Checkout</span>
                 <ArrowRight className="w-5 h-5 ml-1" />
               </button>
