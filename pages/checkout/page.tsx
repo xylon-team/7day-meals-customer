@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
-import { useStore } from '@/store/useStore';
-import { useCartStore, CartItem } from '@/store/useCartStore';
+import { useStore, CartItem } from '@/store/useStore';
+import { createOrder } from '@/lib/api/orders';
 import {
   MapPin,
   CalendarDays,
@@ -115,7 +115,7 @@ function OrderSummary({ items, totalAmount }: { items: CartItem[]; totalAmount: 
             <div key={item.id} className="flex items-center justify-between gap-3">
               <span className="text-sm text-stone-700">
                 <span className="font-semibold text-gray-900">{item.quantity}×</span>{' '}
-                {item.title}
+                {item.name || item.title}
               </span>
               <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">
                 Rs. {(item.price * item.quantity).toLocaleString()}
@@ -268,12 +268,16 @@ function PaymentStep({
   onChange,
   onPay,
   onBack,
+  isSubmitting,
+  submitError,
 }: {
   data: PaymentFormData;
   totalAmount: number;
   onChange: (d: Partial<PaymentFormData>) => void;
   onPay: () => void;
   onBack: () => void;
+  isSubmitting?: boolean;
+  submitError?: string;
 }) {
   const [errors, setErrors] = useState<Partial<PaymentFormData>>({});
 
@@ -438,6 +442,12 @@ function PaymentStep({
           </div>
         </div>
 
+        {submitError && (
+          <div className="mt-4 p-3 rounded-lg bg-rose-50 text-rose-600 text-sm flex items-center gap-2">
+            <span className="font-semibold">Error:</span> {submitError}
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="flex gap-3 pt-2">
           <button
@@ -451,9 +461,10 @@ function PaymentStep({
           <button
             id="pay-now"
             onClick={handlePay}
-            className="flex-1 bg-gray-900 hover:bg-gray-800 active:scale-[0.99] text-white font-semibold py-3 px-6 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer"
+            disabled={isSubmitting}
+            className="flex-1 bg-gray-900 hover:bg-gray-800 active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer"
           >
-            Pay Rs. {totalAmount.toLocaleString()}
+            {isSubmitting ? 'Processing...' : `Pay Rs. ${totalAmount.toLocaleString()}`}
           </button>
         </div>
       </div>
@@ -523,11 +534,13 @@ function ConfirmationStep({
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { user } = useStore();
-  const { items, totalAmount, clearCart } = useCartStore();
+  const { user, token, cart: items, clearCart } = useStore();
+  const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   const [currentStep, setCurrentStep] = useState<Step>('delivery');
   const [orderRef, setOrderRef] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const [delivery, setDelivery] = useState<DeliveryFormData>({
     address: '',
@@ -549,12 +562,40 @@ export default function CheckoutPage() {
     }
   }, [user]);
 
-  const handleConfirmPayment = () => {
-    // Generate an order reference
-    const ref = `#ORD-${Math.floor(1000 + Math.random() * 9000)}`;
-    setOrderRef(ref);
-    setCurrentStep('confirmation');
-    clearCart();
+  const handleConfirmPayment = async () => {
+    if (!user?.customer_id || !token || items.length === 0) return;
+
+    setIsSubmitting(true);
+    setSubmitError('');
+
+    try {
+      let firstOrderId = '';
+      
+      // Submit an order for each cart item
+      for (const item of items) {
+        const payload = {
+          customer_id: user.customer_id,
+          meal_id: (typeof item.id === 'number' && !isNaN(item.id)) ? item.id : (parseInt(String(item.id), 10) || 1),
+          order_status: 'PENDING',
+          payment_status: 'PAID',
+          delivery_status: 'PROCESSING',
+          delivery_preferred_date: new Date(delivery.startDate).toISOString(),
+          is_a_subscribed_meal: false,
+        };
+        const order = await createOrder(user.customer_id, payload, token);
+        if (!firstOrderId) {
+           firstOrderId = `#ORD-${order.order_id || Math.floor(1000 + Math.random() * 9000)}`;
+        }
+      }
+
+      setOrderRef(firstOrderId);
+      setCurrentStep('confirmation');
+      clearCart();
+    } catch (err: any) {
+      setSubmitError(err.message || 'Failed to place order.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleTrackOrder = () => {
@@ -603,6 +644,8 @@ export default function CheckoutPage() {
                 onChange={(d) => setPayment((prev) => ({ ...prev, ...d }))}
                 onPay={handleConfirmPayment}
                 onBack={() => setCurrentStep('delivery')}
+                isSubmitting={isSubmitting}
+                submitError={submitError}
               />
             )}
             {currentStep === 'confirmation' && (
