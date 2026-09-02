@@ -7,7 +7,7 @@ import { MealCard } from './components/MealCard';
 import { FilterBar, CategoryFilter, SortOption } from './components/FilterBar';
 import { SearchBar } from './components/SearchBar';
 import { MealDetailModal } from './components/MealDetailModal';
-import { MealPlan } from '@/lib/data/meal-plans';
+import { MealPlan, MEAL_PLANS } from '@/lib/data/meal-plans';
 import { fetchMealPlans, mapApiMealToMealPlan } from '@/lib/api/meals';
 import { ShoppingBag, Sparkles, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useStore } from '@/store/useStore';
@@ -30,18 +30,23 @@ export default function MealPlansPage() {
     setMounted(true);
   }, []);
 
-  // Fetch meal plans from NestJS backend
+  // Fetch meal plans from NestJS backend with fallback
   const loadMealPlans = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const rawApiMeals = await fetchMealPlans();
-      const mapped = rawApiMeals.map(mapApiMealToMealPlan);
-      setMealPlans(mapped);
+      if (Array.isArray(rawApiMeals) && rawApiMeals.length > 0) {
+        const mapped = rawApiMeals.map(mapApiMealToMealPlan);
+        setMealPlans(mapped);
+      } else {
+        setMealPlans(MEAL_PLANS);
+      }
     } catch (err: any) {
-      console.error('Failed to load meal plans from backend:', err);
+      console.warn('Backend fetch failed, using offline static meal plans:', err);
+      setMealPlans(MEAL_PLANS);
       setError(
-        err?.message || 'Failed to load meal plans from the server. Please check your backend connection.'
+        'Unable to connect to NestJS backend (http://localhost:8007). Showing local fallback meal plans.'
       );
     } finally {
       setLoading(false);
