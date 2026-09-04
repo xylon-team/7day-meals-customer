@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { useStore } from '@/store/useStore';
@@ -326,48 +326,6 @@ function PaymentStep({
   onPay: () => void;
   onBack: () => void;
 }) {
-  const [errors, setErrors] = useState<Partial<PaymentFormData>>({});
-
-  const validate = () => {
-    const errs: Partial<PaymentFormData> = {};
-    if (data.selectedCard === 'new') {
-      if (!data.cardNumber.replace(/\s/g, '').match(/^\d{16}$/)) {
-        errs.cardNumber = 'Enter a valid 16-digit card number.';
-      }
-      if (!data.expiry.match(/^(0[1-9]|1[0-2])\/\d{2}$/)) {
-        errs.expiry = 'Use MM/YY format.';
-      }
-      if (!data.cvv.match(/^\d{3,4}$/)) {
-        errs.cvv = 'Enter a valid CVV.';
-      }
-    }
-    return errs;
-  };
-
-  const handlePay = () => {
-    const errs = validate();
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs);
-      return;
-    }
-    setErrors({});
-    onPay();
-  };
-
-  const formatCardNumber = (value: string) => {
-    return value
-      .replace(/\D/g, '')
-      .slice(0, 16)
-      .replace(/(.{4})/g, '$1 ')
-      .trim();
-  };
-
-  const formatExpiry = (value: string) => {
-    const digits = value.replace(/\D/g, '').slice(0, 4);
-    if (digits.length >= 3) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-    return digits;
-  };
-
   return (
     <div className="bg-white rounded-2xl border border-stone-200/70 shadow-sm p-8">
       {/* Section Header */}
@@ -376,117 +334,11 @@ function PaymentStep({
         Payment Method
       </h2>
 
-      <div className="space-y-4">
-        {/* Saved Card Option */}
-        <label
-          htmlFor="saved-card"
-          className={`flex items-center justify-between gap-4 px-5 py-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-            data.selectedCard === 'saved'
-              ? 'border-[#0D5C53] bg-teal-50/40'
-              : 'border-stone-200 hover:border-stone-300 bg-[#F9F8F6]'
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            <input
-              type="radio"
-              id="saved-card"
-              name="payment-method"
-              checked={data.selectedCard === 'saved'}
-              onChange={() => onChange({ selectedCard: 'saved' })}
-              className="accent-[#0D5C53] w-4 h-4"
-            />
-            <div>
-              <p className="text-sm font-semibold text-gray-900">Visa ending in 4242</p>
-              <p className="text-xs text-stone-500">Expires 12/25</p>
-            </div>
-          </div>
-          <CreditCard className="w-5 h-5 text-stone-400" />
-        </label>
-
-        {/* Add New Card Option */}
-        <div>
-          <label
-            htmlFor="new-card"
-            className={`flex items-center gap-3 px-5 py-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-              data.selectedCard === 'new'
-                ? 'border-[#0D5C53] bg-teal-50/40'
-                : 'border-stone-200 hover:border-stone-300 bg-[#F9F8F6]'
-            }`}
-          >
-            <input
-              type="radio"
-              id="new-card"
-              name="payment-method"
-              checked={data.selectedCard === 'new'}
-              onChange={() => onChange({ selectedCard: 'new' })}
-              className="accent-[#0D5C53] w-4 h-4"
-            />
-            <span className="text-sm font-semibold text-gray-900">Add New Card</span>
-          </label>
-
-          {/* New card fields — animated */}
-          <div
-            className={`overflow-hidden transition-all duration-300 ${
-              data.selectedCard === 'new' ? 'max-h-96 opacity-100 mt-4' : 'max-h-0 opacity-0'
-            }`}
-          >
-            <div className="space-y-3 px-1">
-              {/* Card Number */}
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1" htmlFor="card-number">
-                  Card Number
-                </label>
-                <input
-                  id="card-number"
-                  type="text"
-                  placeholder="0000 0000 0000 0000"
-                  value={data.cardNumber}
-                  onChange={(e) => onChange({ cardNumber: formatCardNumber(e.target.value) })}
-                  className={`w-full px-4 py-3 text-sm rounded-xl border bg-[#F9F8F6] text-gray-900 placeholder-stone-400 outline-none transition-all
-                    focus:ring-2 focus:ring-[#0D5C53]/30 focus:border-[#0D5C53]
-                    ${errors.cardNumber ? 'border-rose-400' : 'border-stone-200 hover:border-stone-300'}`}
-                />
-                {errors.cardNumber && <p className="mt-1 text-xs text-rose-500">{errors.cardNumber}</p>}
-              </div>
-
-              {/* Expiry + CVV */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1" htmlFor="card-expiry">
-                    Expiry
-                  </label>
-                  <input
-                    id="card-expiry"
-                    type="text"
-                    placeholder="MM/YY"
-                    value={data.expiry}
-                    onChange={(e) => onChange({ expiry: formatExpiry(e.target.value) })}
-                    className={`w-full px-4 py-3 text-sm rounded-xl border bg-[#F9F8F6] text-gray-900 placeholder-stone-400 outline-none transition-all
-                      focus:ring-2 focus:ring-[#0D5C53]/30 focus:border-[#0D5C53]
-                      ${errors.expiry ? 'border-rose-400' : 'border-stone-200 hover:border-stone-300'}`}
-                  />
-                  {errors.expiry && <p className="mt-1 text-xs text-rose-500">{errors.expiry}</p>}
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1" htmlFor="card-cvv">
-                    CVV
-                  </label>
-                  <input
-                    id="card-cvv"
-                    type="text"
-                    placeholder="123"
-                    maxLength={4}
-                    value={data.cvv}
-                    onChange={(e) => onChange({ cvv: e.target.value.replace(/\D/g, '').slice(0, 4) })}
-                    className={`w-full px-4 py-3 text-sm rounded-xl border bg-[#F9F8F6] text-gray-900 placeholder-stone-400 outline-none transition-all
-                      focus:ring-2 focus:ring-[#0D5C53]/30 focus:border-[#0D5C53]
-                      ${errors.cvv ? 'border-rose-400' : 'border-stone-200 hover:border-stone-300'}`}
-                  />
-                  {errors.cvv && <p className="mt-1 text-xs text-rose-500">{errors.cvv}</p>}
-                </div>
-              </div>
-            </div>
-          </div>
+      <div className="space-y-6">
+        <div className="p-6 bg-stone-50 border border-stone-200 rounded-xl text-center">
+          <CreditCard className="w-8 h-8 text-[#0D5C53] mx-auto mb-3" />
+          <h3 className="text-lg font-bold text-gray-900 mb-1">Secure Checkout</h3>
+          <p className="text-sm text-stone-500">You will be redirected to our secure payment gateway to complete your purchase.</p>
         </div>
 
         {/* Action Buttons */}
@@ -501,10 +353,10 @@ function PaymentStep({
           </button>
           <button
             id="pay-now"
-            onClick={handlePay}
+            onClick={onPay}
             className="flex-1 bg-gray-900 hover:bg-gray-800 active:scale-[0.99] text-white font-semibold py-3 px-6 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer"
           >
-            Pay Rs. {totalAmount.toLocaleString()}
+            Proceed to Payment (Rs. {totalAmount.toLocaleString()})
           </button>
         </div>
       </div>
@@ -574,6 +426,8 @@ function ConfirmationStep({
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const paymentSuccess = searchParams?.get('payment_success');
   const { user } = useStore();
   const { items, totalAmount, clearCart } = useCartStore();
 
@@ -601,31 +455,28 @@ export default function CheckoutPage() {
     }
   }, [user]);
 
-  const handleConfirmPayment = () => {
-    // Simulate payment outcome: 70% success, 30% failure
-    const isSuccess = Math.random() > 0.3;
-
-    if (isSuccess) {
+  // Handle return from payment gateway
+  useEffect(() => {
+    if (paymentSuccess === 'true') {
       const ref = `#ORD-${Math.floor(1000 + Math.random() * 9000)}`;
       setOrderRef(ref);
       setToast({
         type: 'success',
         message: 'Your order has been placed. We are preparing your meals!',
       });
-      // Short delay so the toast is visible before transitioning
+      setCurrentStep('confirmation');
+      clearCart();
       setTimeout(() => {
-        setCurrentStep('confirmation');
-        clearCart();
         setToast(null);
-      }, 2000);
-    } else {
-      setToast({
-        type: 'error',
-        message: 'Your card was declined. Please check your details and try again.',
-      });
-      // Auto-dismiss error toast after 4 s
-      setTimeout(() => setToast(null), 4000);
+      }, 4000);
+      
+      // Clean up the URL parameter
+      router.replace('/checkout');
     }
+  }, [paymentSuccess, clearCart, router]);
+
+  const handleConfirmPayment = () => {
+    router.push(`/payment-gateway?amount=${totalAmount}`);
   };
 
   const handleTrackOrder = () => {
