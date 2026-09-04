@@ -43,9 +43,10 @@ function persistCart() {
 }
 
 export function useCartStore() {
-  const [items, setItems] = useState<CartItem[]>(globalCart.items);
+  const [items, setItems] = useState<CartItem[]>([]);
 
   useEffect(() => {
+    setItems([...globalCart.items]);
     const listener = () => setItems([...globalCart.items]);
     cartListeners.add(listener);
     return () => { cartListeners.delete(listener); };
