@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ShoppingCart, ChevronDown, LogOut } from 'lucide-react';
+import { Bell, ShoppingCart, ChevronDown, LogOut } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 
 interface HeaderProps {
@@ -78,8 +78,19 @@ export const Header: React.FC<HeaderProps> = ({ cartCount, activeTab = 'Meals' }
           })}
         </nav>
 
-        {/* Right: Cart, User Profile & Logout */}
+        {/* Right: Notification, Cart, User Profile & Logout */}
         <div className="flex items-center gap-4">
+          {/* Notification Icon */}
+          <Link
+            href="/notifications"
+            className={`relative p-2 transition-colors cursor-pointer ${
+              activeTab === 'Notifications' ? 'text-[#0D5C53]' : 'text-gray-700 hover:text-[#0D5C53]'
+            }`}
+            aria-label="Notifications"
+          >
+            <Bell className="w-5 h-5 stroke-[1.8]" />
+          </Link>
+
           {/* Shopping Cart Icon */}
           <Link href="/cart" className="relative text-gray-700 hover:text-[#0D5C53] p-2 transition-colors cursor-pointer" aria-label="Shopping Cart">
             <ShoppingCart className="w-5 h-5 stroke-[1.8]" />
