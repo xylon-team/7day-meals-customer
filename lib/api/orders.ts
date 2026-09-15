@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8007';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5001';
 
 export interface CreateOrderPayload {
   customer_id: number;

@@ -43,12 +43,12 @@ export const Header: React.FC<HeaderProps> = ({ cartCount, activeTab = 'Meals' }
   };
 
   return (
-    <header className="w-full bg-[#F9F8F6] border-b border-stone-200/60 sticky top-0 z-50">
+    <header className="w-full bg-[#FAF8F5] border-b border-[#EAE7DF]/60 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
 
         {/* Left: Brand Logo */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-10 h-10 rounded-full bg-[#0D5C53] flex items-center justify-center text-white font-bold text-base shadow-sm group-hover:bg-[#09433D] transition-colors">
+          <div className="w-9 h-9 rounded-full bg-[#0E5A52] flex items-center justify-center text-white font-bold text-sm shadow-xs group-hover:bg-[#09433D] transition-colors">
             7D
           </div>
           <span className="font-serif text-2xl font-bold tracking-tight text-gray-900">
@@ -65,13 +65,13 @@ export const Header: React.FC<HeaderProps> = ({ cartCount, activeTab = 'Meals' }
                 key={item}
                 href={item === 'Meals' ? '/meal-plans' : `/${item.toLowerCase()}`}
                 className={`text-sm font-medium transition-colors relative py-1 ${isActive
-                    ? 'text-[#0D5C53] font-semibold'
-                    : 'text-gray-600 hover:text-gray-900'
+                    ? 'text-[#0E5A52] font-semibold'
+                    : 'text-stone-600 hover:text-stone-900'
                   }`}
               >
                 {item}
                 {isActive && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#0D5C53] rounded-full" />
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#0E5A52] rounded-full" />
                 )}
               </Link>
             );
@@ -81,25 +81,25 @@ export const Header: React.FC<HeaderProps> = ({ cartCount, activeTab = 'Meals' }
         {/* Right: Cart, User Profile & Logout */}
         <div className="flex items-center gap-4">
           {/* Shopping Cart Icon */}
-          <Link href="/cart" className="relative text-gray-700 hover:text-[#0D5C53] p-2 transition-colors cursor-pointer" aria-label="Shopping Cart">
+          <Link href="/cart" className="relative text-stone-700 hover:text-[#0E5A52] p-2 transition-colors cursor-pointer" aria-label="Shopping Cart">
             <ShoppingCart className="w-5 h-5 stroke-[1.8]" />
             {displayCartCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-[#0D5C53] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-scale-in">
+              <span className="absolute -top-1 -right-1 bg-[#0E5A52] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-scale-in">
                 {displayCartCount}
               </span>
             )}
           </Link>
 
           {/* User Profile Pill */}
-          {mounted && isAuthenticated && (
-            <Link href="/profile" className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity">
-              <div className="w-8 h-8 rounded-full bg-[#0D5C53] text-white flex items-center justify-center font-bold text-sm shadow-sm">
-                {displayInitial}
-              </div>
-              <span className="text-sm font-medium text-gray-800">{displayName}</span>
-              <ChevronDown className="w-4 h-4 text-gray-500" />
-            </Link>
-          )}
+          <Link href="/profile" className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity">
+            <div className="w-7 h-7 rounded-full bg-[#0E5A52] text-white flex items-center justify-center font-bold text-xs shadow-xs">
+              {mounted && isAuthenticated && displayName ? displayInitial : 'K'}
+            </div>
+            <span className="text-sm font-medium text-stone-800">
+              {mounted && isAuthenticated && displayName ? displayName : 'Kasun'}
+            </span>
+            <ChevronDown className="w-4 h-4 text-stone-500" />
+          </Link>
 
           {/* Logout Button — only show when authenticated */}
           {mounted && isAuthenticated && (
@@ -107,7 +107,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount, activeTab = 'Meals' }
               onClick={handleLogout}
               title="Logout"
               aria-label="Logout"
-              className="flex items-center gap-1.5 text-sm font-medium text-stone-500 hover:text-rose-600 transition-colors cursor-pointer p-2 rounded-lg hover:bg-rose-50"
+              className="flex items-center gap-1.5 text-sm font-medium text-stone-500 hover:text-rose-600 transition-colors cursor-pointer p-1.5 rounded-lg hover:bg-rose-50"
             >
               <LogOut className="w-4 h-4" />
               <span className="hidden sm:inline">Logout</span>
