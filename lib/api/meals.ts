@@ -1,6 +1,6 @@
 import { MealPlan } from '@/lib/data/meal-plans';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8007';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5001';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
