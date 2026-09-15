@@ -5,7 +5,7 @@ import { MealPlan } from '@/lib/data/meal-plans';
 import { fetchMealPlanById, ApiMealPlan, ApiMealPlanFoodItem } from '@/lib/api/meals';
 import Badge from '@/components/Badge';
 import Button from '@/components/Button';
-import { X, Calendar, Utensils, AlertCircle, ShoppingBag } from 'lucide-react';
+import { X, Calendar, Utensils, AlertCircle, ShoppingBag, Repeat } from 'lucide-react';
 
 interface MealDetailModalProps {
   plan: MealPlan | null;
@@ -188,28 +188,35 @@ export const MealDetailModal: React.FC<MealDetailModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="p-5 bg-stone-50 border-t border-stone-100 flex items-center justify-between gap-4">
+        <div className="p-5 bg-stone-50 border-t border-stone-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <button
             onClick={onClose}
-            className="text-stone-600 hover:text-stone-900 text-xs font-semibold px-4 py-2 rounded-xl transition-colors cursor-pointer"
+            className="text-stone-600 hover:text-stone-900 text-xs font-semibold px-4 py-2 rounded-xl transition-colors cursor-pointer text-center sm:text-left"
           >
             Close
           </button>
-          <Button
-            variant="primary"
-            size="md"
-            onClick={() => {
-              onAddToCart(plan);
-              onClose();
-            }}
-          >
-            <ShoppingBag className="w-4 h-4 mr-1.5" />
-            Add to Cart (Rs. {plan.price})
-          </Button>
+          <div className="flex items-center gap-2.5">
+            <a
+              href="/subscription"
+              className="inline-flex items-center justify-center font-semibold rounded-full text-xs px-4 py-2.5 border border-[#0D5C53] text-[#0D5C53] hover:bg-teal-50 transition-colors"
+            >
+              <Repeat className="w-3.5 h-3.5 mr-1.5" />
+              Subscribe Weekly
+            </a>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => {
+                onAddToCart(plan);
+                onClose();
+              }}
+            >
+              <ShoppingBag className="w-4 h-4 mr-1.5" />
+              Add to Cart (Rs. {plan.price})
+            </Button>
+          </div>
         </div>
       </div>
     </div>
   );
 };
-
-export default MealDetailModal;

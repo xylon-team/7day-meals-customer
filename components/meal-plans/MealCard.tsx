@@ -4,7 +4,7 @@ import React from 'react';
 import { MealPlan } from '@/lib/data/meal-plans';
 import Button from '@/components/Button';
 import Badge from '@/components/Badge';
-import { Eye } from 'lucide-react';
+import { Eye, Repeat } from 'lucide-react';
 
 interface MealCardProps {
   plan: MealPlan;
@@ -127,5 +127,3 @@ export const MealCard: React.FC<MealCardProps> = ({
     </div>
   );
 };
-
-export default MealCard;
