@@ -29,7 +29,6 @@ export const FilterBar: React.FC<FilterBarProps> = ({
 
   return (
     <div className="w-full bg-white rounded-2xl p-3.5 border border-stone-200/70 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 my-6">
-      
       {/* Filter Pills */}
       <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 scrollbar-none">
         {categories.map((cat) => {
@@ -67,10 +66,6 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           <ChevronDown className="w-3.5 h-3.5 text-stone-600 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
         </div>
       </div>
-
     </div>
   );
 };
-
-export default FilterBar;
-

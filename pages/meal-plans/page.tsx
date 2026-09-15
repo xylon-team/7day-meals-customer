@@ -3,10 +3,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
-import { MealCard } from './components/MealCard';
-import { FilterBar, CategoryFilter, SortOption } from './components/FilterBar';
-import { SearchBar } from './components/SearchBar';
-import { MealDetailModal } from './components/MealDetailModal';
+import { MealCard } from '@/components/meal-plans/MealCard';
+import { FilterBar, CategoryFilter, SortOption } from '@/components/meal-plans/FilterBar';
+import { SearchBar } from '@/components/meal-plans/SearchBar';
+import { MealDetailModal } from '@/components/meal-plans/MealDetailModal';
 import { MealPlan } from '@/lib/data/meal-plans';
 import { fetchMealPlans, mapApiMealToMealPlan } from '@/lib/api/meals';
 import { ShoppingBag, Sparkles, RefreshCw, AlertTriangle } from 'lucide-react';
