@@ -115,7 +115,7 @@ function OrderSummary({ items, totalAmount }: { items: CartItem[]; totalAmount: 
             <div key={item.id} className="flex items-center justify-between gap-3">
               <span className="text-sm text-stone-700">
                 <span className="font-semibold text-gray-900">{item.quantity}×</span>{' '}
-                {item.name || item.title}
+                {item.name || (item as any).title}
               </span>
               <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">
                 Rs. {(item.price * item.quantity).toLocaleString()}
