@@ -11,8 +11,8 @@ interface HeaderProps {
   activeTab?: string;
 }
 
-export const Header: React.FC<HeaderProps> = ({ cartCount, activeTab = 'Meals' }) => {
-  const navItems = ['Dashboard', 'Meals', 'Orders', 'Subscription'];
+export const Header: React.FC<HeaderProps> = ({ cartCount, activeTab = 'Home' }) => {
+  const navItems = ['Home', 'Meals', 'Orders', 'Subscription'];
   const { user, isAuthenticated, token, logout, cart } = useStore();
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
@@ -63,7 +63,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount, activeTab = 'Meals' }
             return (
               <Link
                 key={item}
-                href={item === 'Meals' ? '/meal-plans' : `/${item.toLowerCase()}`}
+                href={item === 'Meals' ? '/meal-plans' : item === 'Home' ? '/' : `/${item.toLowerCase()}`}
                 className={`text-sm font-medium transition-colors relative py-1 ${isActive
                     ? 'text-[#0D5C53] font-semibold'
                     : 'text-gray-600 hover:text-gray-900'
