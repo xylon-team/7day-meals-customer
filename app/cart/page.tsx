@@ -24,7 +24,7 @@ export default function CartPage() {
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] flex flex-col font-sans">
-      <Header cartCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)} activeTab="Dashboard" />
+      <Header cartCount={cartItems.reduce((sum, item) => sum + item.quantity, 0)} activeTab="Home" />
       
       <main className="flex-grow max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full">
         <h1 className="text-[32px] md:text-[40px] font-serif text-slate-900 mb-8 font-bold tracking-tight" style={{ fontFamily: 'Georgia, serif' }}>Your Cart</h1>
