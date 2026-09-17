@@ -38,3 +38,16 @@ export async function fetchUserOrders(userId: number, token: string) {
   }
   return res.json();
 }
+
+export async function fetchOrderById(userId: number, orderId: number | string, token: string) {
+  const res = await fetch(`${BASE_URL}/users/${userId}/orders/${orderId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.message || 'Failed to fetch order details');
+  }
+  return res.json();
+}
