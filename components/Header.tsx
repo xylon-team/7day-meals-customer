@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ShoppingCart, ChevronDown, LogOut } from 'lucide-react';
+import { Bell, ShoppingCart, ChevronDown, LogOut } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 
 interface HeaderProps {
@@ -11,8 +11,8 @@ interface HeaderProps {
   activeTab?: string;
 }
 
-export const Header: React.FC<HeaderProps> = ({ cartCount, activeTab = 'Meals' }) => {
-  const navItems = ['Dashboard', 'Meals', 'Orders', 'Subscription'];
+export const Header: React.FC<HeaderProps> = ({ cartCount, activeTab = 'Home' }) => {
+  const navItems = ['Home', 'Meals', 'Orders', 'Subscription'];
   const { user, isAuthenticated, token, logout, cart } = useStore();
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
@@ -63,7 +63,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount, activeTab = 'Meals' }
             return (
               <Link
                 key={item}
-                href={item === 'Meals' ? '/meal-plans' : `/${item.toLowerCase()}`}
+                href={item === 'Meals' ? '/meal-plans' : item === 'Home' ? '/' : `/${item.toLowerCase()}`}
                 className={`text-sm font-medium transition-colors relative py-1 ${isActive
                     ? 'text-[#0E5A52] font-semibold'
                     : 'text-stone-600 hover:text-stone-900'
@@ -78,8 +78,19 @@ export const Header: React.FC<HeaderProps> = ({ cartCount, activeTab = 'Meals' }
           })}
         </nav>
 
-        {/* Right: Cart, User Profile & Logout */}
+        {/* Right: Notification, Cart, User Profile & Logout */}
         <div className="flex items-center gap-4">
+          {/* Notification Icon */}
+          <Link
+            href="/notifications"
+            className={`relative p-2 transition-colors cursor-pointer ${
+              activeTab === 'Notifications' ? 'text-[#0D5C53]' : 'text-gray-700 hover:text-[#0D5C53]'
+            }`}
+            aria-label="Notifications"
+          >
+            <Bell className="w-5 h-5 stroke-[1.8]" />
+          </Link>
+
           {/* Shopping Cart Icon */}
           <Link href="/cart" className="relative text-stone-700 hover:text-[#0E5A52] p-2 transition-colors cursor-pointer" aria-label="Shopping Cart">
             <ShoppingCart className="w-5 h-5 stroke-[1.8]" />

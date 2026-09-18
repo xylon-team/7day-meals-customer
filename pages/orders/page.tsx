@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { useStore } from '@/store/useStore';
@@ -11,6 +12,7 @@ import { Package, Search, SlidersHorizontal, Star, X, Check, CalendarDays, MapPi
 interface OrderItem {
   id: string;
   orderNumber: string;
+  rawId: string;
   status: 'Delivered' | 'Pending' | 'Processing' | 'Cancelled' | string;
   date: string;
   items: string;
@@ -20,11 +22,11 @@ interface OrderItem {
   paymentStatus?: string;
 }
 
-// Sample orders matching the design mock
 const SAMPLE_ORDERS: OrderItem[] = [
   {
     id: 'ord-9823',
     orderNumber: '#ORD-9823',
+    rawId: '9823',
     status: 'Delivered',
     date: 'Oct 24, 2023',
     items: '2x Classic Sri Lankan Breakfast, 1x Chicken Rice & Curry',
@@ -36,6 +38,7 @@ const SAMPLE_ORDERS: OrderItem[] = [
   {
     id: 'ord-9810',
     orderNumber: '#ORD-9810',
+    rawId: '9810',
     status: 'Delivered',
     date: 'Oct 17, 2023',
     items: '2x Kottu Roti (Chicken)',
@@ -47,6 +50,7 @@ const SAMPLE_ORDERS: OrderItem[] = [
   {
     id: 'ord-9755',
     orderNumber: '#ORD-9755',
+    rawId: '9755',
     status: 'Delivered',
     date: 'Oct 10, 2023',
     items: '3x Vegetarian Rice & Curry',
@@ -59,14 +63,13 @@ const SAMPLE_ORDERS: OrderItem[] = [
 
 export default function OrdersPage() {
   const router = useRouter();
-  const { user, token, isAuthenticated } = useStore();
+  const { user, token } = useStore();
   const [orders, setOrders] = useState<OrderItem[]>(SAMPLE_ORDERS);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   
-  // Modal states
-  const [selectedOrderDetails, setSelectedOrderDetails] = useState<OrderItem | null>(null);
+  // Rate Modal State
   const [selectedOrderRate, setSelectedOrderRate] = useState<OrderItem | null>(null);
   const [ratingStars, setRatingStars] = useState<number>(5);
   const [ratingComment, setRatingComment] = useState<string>('');
@@ -81,6 +84,7 @@ export default function OrdersPage() {
             const mappedApiOrders: OrderItem[] = apiData.map((order: any) => ({
               id: `ord-${order.order_id}`,
               orderNumber: `#ORD-${order.order_id}`,
+              rawId: String(order.order_id),
               status: order.order_status || 'Processing',
               date: new Date(order.created_at || Date.now()).toLocaleDateString('en-US', {
                 month: 'short',
@@ -94,13 +98,11 @@ export default function OrdersPage() {
               paymentStatus: order.payment_status || 'PAID'
             }));
 
-            // Merge API orders with sample orders ensuring unique IDs
             const existingIds = new Set(mappedApiOrders.map(o => o.orderNumber));
             const filteredSamples = SAMPLE_ORDERS.filter(s => !existingIds.has(s.orderNumber));
             setOrders([...mappedApiOrders, ...filteredSamples]);
           }
         } catch {
-          // Fall back to mock sample data if fetch fails or unauthenticated
           setOrders(SAMPLE_ORDERS);
         } finally {
           setLoading(false);
@@ -232,9 +234,12 @@ export default function OrdersPage() {
                   </div>
                   <div>
                     <div className="flex items-center gap-2.5">
-                      <h3 className="font-bold text-[#111827] text-base sm:text-lg">
+                      <Link
+                        href={`/orders/individual-order?id=${order.rawId}`}
+                        className="font-bold text-[#111827] text-base sm:text-lg hover:text-[#0E5A52] transition-colors"
+                      >
                         {order.orderNumber}
-                      </h3>
+                      </Link>
                       <span className="bg-[#D7EFE7] text-[#0E5A52] font-semibold text-[11px] px-2.5 py-0.5 rounded-md">
                         {order.status}
                       </span>
@@ -257,12 +262,12 @@ export default function OrdersPage() {
                   </div>
 
                   <div className="flex flex-col gap-2 min-w-[110px]">
-                    <button
-                      onClick={() => setSelectedOrderDetails(order)}
-                      className="bg-[#F3F0E6] hover:bg-[#EAE6DA] text-[#111827] font-semibold text-xs py-2 px-4 rounded-full transition-colors text-center cursor-pointer"
+                    <Link
+                      href={`/orders/individual-order?id=${order.rawId}`}
+                      className="bg-[#F3F0E6] hover:bg-[#EAE6DA] text-[#111827] font-semibold text-xs py-2 px-4 rounded-full transition-colors text-center"
                     >
                       View Details
-                    </button>
+                    </Link>
                     <button
                       onClick={() => {
                         setSelectedOrderRate(order);
@@ -281,87 +286,6 @@ export default function OrdersPage() {
           </div>
         )}
       </main>
-
-      {/* View Details Modal */}
-      {selectedOrderDetails && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-stone-200 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-4 border-b border-stone-100">
-              <div>
-                <h3 className="font-bold text-stone-900 text-lg">Order Details</h3>
-                <p className="text-xs text-stone-400">{selectedOrderDetails.orderNumber}</p>
-              </div>
-              <button
-                onClick={() => setSelectedOrderDetails(null)}
-                className="text-stone-400 hover:text-stone-600 p-1 rounded-lg hover:bg-stone-100 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="py-4 space-y-4">
-              <div className="bg-[#FAF8F5] p-3.5 rounded-xl border border-stone-100 text-sm">
-                <span className="text-xs font-semibold uppercase tracking-wider text-stone-400 block mb-1">
-                  Ordered Items
-                </span>
-                <p className="font-medium text-stone-800">{selectedOrderDetails.items}</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="p-3 bg-stone-50 rounded-xl">
-                  <span className="text-stone-400 block mb-1">Order Date</span>
-                  <span className="font-semibold text-stone-800 flex items-center gap-1">
-                    <CalendarDays className="w-3.5 h-3.5 text-[#0E5A52]" />
-                    {selectedOrderDetails.date}
-                  </span>
-                </div>
-                <div className="p-3 bg-stone-50 rounded-xl">
-                  <span className="text-stone-400 block mb-1">Status</span>
-                  <span className="font-semibold text-[#0E5A52] flex items-center gap-1">
-                    <Check className="w-3.5 h-3.5" />
-                    {selectedOrderDetails.status}
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-2 text-xs text-stone-600 pt-2 border-t border-stone-100">
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5 text-stone-500">
-                    <MapPin className="w-3.5 h-3.5 text-stone-400" />
-                    Delivery Address:
-                  </span>
-                  <span className="font-medium text-stone-800">
-                    {selectedOrderDetails.deliveryAddress || '123 Galle Road, Colombo 03'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5 text-stone-500">
-                    <CreditCard className="w-3.5 h-3.5 text-stone-400" />
-                    Payment Status:
-                  </span>
-                  <span className="font-semibold text-emerald-700">
-                    {selectedOrderDetails.paymentStatus || 'PAID'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-stone-100 flex items-center justify-between">
-                <span className="font-semibold text-stone-700 text-sm">Total Paid</span>
-                <span className="font-bold text-xl text-[#0E5A52]">
-                  {selectedOrderDetails.price}
-                </span>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setSelectedOrderDetails(null)}
-              className="w-full mt-2 bg-[#0E5A52] hover:bg-[#09433D] text-white font-semibold py-2.5 rounded-xl text-sm transition-colors cursor-pointer"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Rate Order Modal */}
       {selectedOrderRate && (

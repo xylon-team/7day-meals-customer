@@ -1,19 +1,32 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { ShoppingCart } from 'lucide-react';
+import { useStore } from '@/store/useStore';
 
 interface PublicHeaderProps {
-  activePage?: 'login' | 'register' | 'forgot-password';
+  activePage?: 'home' | 'about' | 'services' | 'meal-plans' | 'contact' | 'login' | 'register' | 'forgot-password' | string;
 }
 
 export const PublicHeader: React.FC<PublicHeaderProps> = ({ activePage }) => {
+  const { cart } = useStore();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const displayCartCount = mounted
+    ? cart.reduce((sum, item) => sum + item.quantity, 0)
+    : 0;
+
   const navItems = [
-    { label: 'Home', href: '/' },
-    { label: 'About Us', href: '/about' },
-    { label: 'Services', href: '/services' },
-    { label: 'Meal Plans', href: '/meal-plans' },
-    { label: 'Contact Us', href: '/contact' },
+    { label: 'Home', href: '/', id: 'home' },
+    { label: 'About Us', href: '/about', id: 'about' },
+    { label: 'Services', href: '/services', id: 'services' },
+    { label: 'Meal Plans', href: '/meal-plans', id: 'meal-plans' },
+    { label: 'Contact Us', href: '/contact', id: 'contact' },
   ];
 
   return (
@@ -32,19 +45,43 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({ activePage }) => {
 
         {/* Center: Navigation Links */}
         <nav className="hidden lg:flex items-center gap-7">
-          {navItems.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              {item.label}
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            const isActive = activePage === item.id;
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                className={`text-sm font-medium transition-colors relative py-1 ${
+                  isActive
+                    ? 'text-[#0D5C53] font-semibold'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                {item.label}
+                {isActive && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#0D5C53] rounded-full" />
+                )}
+              </Link>
+            );
+          })}
         </nav>
 
-        {/* Right: Login / Register CTAs */}
+        {/* Right: Cart Icon, Login / Register CTAs */}
         <div className="flex items-center gap-3">
+          {/* Shopping Cart Icon */}
+          <Link
+            href="/cart"
+            className="relative text-gray-700 hover:text-[#0D5C53] p-2 transition-colors cursor-pointer mr-1"
+            aria-label="Shopping Cart"
+          >
+            <ShoppingCart className="w-5 h-5 stroke-[1.8]" />
+            {displayCartCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-[#0D5C53] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-scale-in">
+                {displayCartCount}
+              </span>
+            )}
+          </Link>
+
           <Link
             href="/login"
             className={`text-sm font-semibold transition-colors px-3 py-2 ${
