@@ -237,7 +237,7 @@ export default function AboutPage() {
     <div className="min-h-screen bg-[#FDFBF7] text-gray-900 flex flex-col font-sans">
       {/* Header (Guest vs Auth aware) */}
       {mounted && isAuthenticated ? (
-        <Header activeTab="About" />
+        <Header activeTab="About Us" />
       ) : (
         <PublicHeader activePage="about" />
       )}
@@ -278,12 +278,6 @@ export default function AboutPage() {
                   >
                     <span>Browse Meal Plans</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </Link>
-                  <Link
-                    href="/register"
-                    className="inline-flex items-center gap-2 bg-white hover:bg-stone-50 text-gray-800 border border-stone-300 font-semibold px-7 py-3.5 rounded-full shadow-xs hover:shadow transition-all text-sm sm:text-base"
-                  >
-                    <span>Create Free Account</span>
                   </Link>
                 </div>
               </div>
@@ -789,12 +783,6 @@ export default function AboutPage() {
                 className="bg-white hover:bg-stone-100 text-[#0D5C53] font-bold text-sm sm:text-base px-8 py-4 rounded-full transition-all shadow-xl hover:shadow-2xl hover:-translate-y-0.5"
               >
                 View Available Meal Plans
-              </Link>
-              <Link
-                href="/register"
-                className="bg-[#1E293B] hover:bg-black text-white font-bold text-sm sm:text-base px-8 py-4 rounded-full transition-all shadow-md hover:shadow-lg border border-slate-700"
-              >
-                Sign Up for Free
               </Link>
             </div>
           </div>
