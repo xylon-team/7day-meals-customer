@@ -112,7 +112,7 @@ export default function HomePage() {
       {mounted && isAuthenticated ? (
         <Header activeTab="Home" />
       ) : (
-        <PublicHeader activePage="login" />
+        <PublicHeader activePage="home" />
       )}
 
       <main className="flex-1 w-full">

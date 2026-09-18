@@ -71,6 +71,3 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     </div>
   );
 };
-
-export default FilterBar;
-
