@@ -75,7 +75,7 @@ export default function IndividualOrderPage() {
             if (data) {
               setOrder({
                 orderId: `#${data.order_id || numericId}`,
-                placedDate: new Date(data.created_at || Date.now()).toLocaleString('en-US', {
+placedDate: new Date(data.order_timestamp || data.created_at || Date.now()).toLocaleString('en-US', {
                   month: 'short',
                   day: 'numeric',
                   year: 'numeric',
