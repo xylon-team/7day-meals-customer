@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ApiMealPlan } from '@/lib/api/meals';
+import { ApiMealPlan, getMealImage } from '@/lib/api/meals';
 import { CreateSubscriptionPayload } from '@/lib/api/subscriptions';
 import Badge from '@/components/Badge';
 import Button from '@/components/Button';
@@ -70,15 +70,15 @@ export const SubscribeWizardModal: React.FC<SubscribeWizardModalProps> = ({
     if (step === 'plan') {
       if (!selectedMealId) {
         setError('Please choose a meal plan to continue.');
-        return;
+      } else {
+        setStep('schedule');
       }
-      setStep('schedule');
     } else if (step === 'schedule') {
       if (!startDate) {
         setError('Please select a preferred delivery start date.');
-        return;
+      } else {
+        setStep('confirm');
       }
-      setStep('confirm');
     }
   };
 
@@ -182,18 +182,12 @@ export const SubscribeWizardModal: React.FC<SubscribeWizardModalProps> = ({
                     >
                       <div className="flex items-start gap-3 mb-3">
                         <div className="w-14 h-14 rounded-xl overflow-hidden bg-stone-100 shrink-0 border border-stone-200/60">
-                          {meal.image_path ? (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img
-                              src={meal.image_path}
-                              alt={meal.item_name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-teal-50 flex items-center justify-center text-[#0D5C53]">
-                              <Utensils className="w-6 h-6" />
-                            </div>
-                          )}
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={getMealImage(meal)}
+                            alt={meal.item_name}
+                            className="w-full h-full object-cover"
+                          />
                         </div>
 
                         <div className="flex-1 min-w-0">
@@ -233,14 +227,12 @@ export const SubscribeWizardModal: React.FC<SubscribeWizardModalProps> = ({
                 <div className="p-3.5 bg-stone-50 rounded-2xl border border-stone-200/70 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl overflow-hidden bg-stone-200 shrink-0">
-                      {selectedMeal.image_path && (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
-                          src={selectedMeal.image_path}
-                          alt={selectedMeal.item_name}
-                          className="w-full h-full object-cover"
-                        />
-                      )}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={getMealImage(selectedMeal)}
+                        alt={selectedMeal.item_name}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                     <div>
                       <span className="text-xs font-bold text-gray-900 block">

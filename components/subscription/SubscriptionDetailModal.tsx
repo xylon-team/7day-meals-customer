@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Subscription } from '@/lib/api/subscriptions';
-import { fetchMealPlanById, ApiMealPlan, ApiMealPlanFoodItem } from '@/lib/api/meals';
+import { fetchMealPlanById, ApiMealPlan, ApiMealPlanFoodItem, getMealImage } from '@/lib/api/meals';
 import Badge from '@/components/Badge';
 import {
   X,
@@ -70,18 +70,12 @@ export const SubscriptionDetailModal: React.FC<SubscriptionDetailModalProps> = (
       >
         {/* Banner Image & Header */}
         <div className="relative h-48 bg-stone-100 overflow-hidden shrink-0">
-          {meal?.image_path ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={meal.image_path}
-              alt={meal.item_name}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-teal-50 flex items-center justify-center text-[#0D5C53]">
-              <Utensils className="w-10 h-10" />
-            </div>
-          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={getMealImage(meal)}
+            alt={meal?.item_name || 'Meal Plan'}
+            className="w-full h-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
           {/* Close Button */}

@@ -6,7 +6,7 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/Button';
 import { useStore } from '@/store/useStore';
-import { fetchMealPlans, ApiMealPlan } from '@/lib/api/meals';
+import { fetchMealPlans, ApiMealPlan, getMealImage } from '@/lib/api/meals';
 import {
   Subscription,
   fetchUserSubscriptions,
@@ -470,18 +470,12 @@ export default function SubscriptionPage() {
                         className="bg-white rounded-3xl border border-stone-200/80 shadow-xs hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col justify-between group"
                       >
                         <div className="relative h-48 bg-stone-100 overflow-hidden">
-                          {meal.image_path ? (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img
-                              src={meal.image_path}
-                              alt={meal.item_name}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-teal-50 flex items-center justify-center text-[#0D5C53]">
-                              <Utensils className="w-10 h-10" />
-                            </div>
-                          )}
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={getMealImage(meal)}
+                            alt={meal.item_name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
                           <div className="absolute top-3.5 left-3.5">
                             <Badge variant="category">{meal.category}</Badge>
                           </div>

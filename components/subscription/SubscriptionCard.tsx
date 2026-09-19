@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Subscription } from '@/lib/api/subscriptions';
+import { getMealImage } from '@/lib/api/meals';
 import Badge from '@/components/Badge';
 import Button from '@/components/Button';
 import {
@@ -67,18 +68,12 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
         <div className="flex items-start sm:items-center gap-4">
           {/* Meal Image Thumbnail */}
           <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden bg-stone-100 shrink-0 border border-stone-200/60 shadow-xs">
-            {meal?.image_path ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
-                src={meal.image_path}
-                alt={meal.item_name || 'Meal Plan'}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-teal-50 flex items-center justify-center text-[#0D5C53]">
-                <Utensils className="w-8 h-8" />
-              </div>
-            )}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={getMealImage(meal)}
+              alt={meal?.item_name || 'Meal Plan'}
+              className="w-full h-full object-cover"
+            />
             {/* Recurrence Chip */}
             <div className="absolute bottom-0 inset-x-0 bg-[#0D5C53]/90 text-white text-[9px] font-bold text-center py-0.5 backdrop-blur-xs flex items-center justify-center gap-0.5">
               <Repeat className="w-2.5 h-2.5" />
