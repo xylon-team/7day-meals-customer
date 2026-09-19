@@ -12,7 +12,13 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ cartCount, activeTab = 'Home' }) => {
-  const navItems = ['Home', 'Meals', 'Orders', 'Subscription'];
+  const navItems = [
+    { label: 'Home', href: '/' },
+    { label: 'Meals', href: '/meal-plans' },
+    { label: 'Orders', href: '/orders' },
+    { label: 'Subscription', href: '/subscription' },
+    { label: 'About Us', href: '/about' },
+  ];
   const { user, isAuthenticated, token, logout, cart } = useStore();
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
@@ -59,17 +65,20 @@ export const Header: React.FC<HeaderProps> = ({ cartCount, activeTab = 'Home' })
         {/* Center: Navigation Links */}
         <nav className="hidden md:flex items-center gap-8">
           {navItems.map((item) => {
-            const isActive = item === activeTab;
+            const isActive =
+              item.label === activeTab ||
+              (item.label === 'About Us' && (activeTab === 'About' || activeTab === 'About Us'));
             return (
               <Link
-                key={item}
-                href={item === 'Meals' ? '/meal-plans' : item === 'Home' ? '/' : `/${item.toLowerCase()}`}
-                className={`text-sm font-medium transition-colors relative py-1 ${isActive
-                    ? 'text-[#0E5A52] font-semibold'
-                    : 'text-stone-600 hover:text-stone-900'
-                  }`}
+                key={item.label}
+                href={item.href}
+                className={`text-sm font-medium transition-colors relative py-1 ${
+                  isActive
+                    ? 'text-[#0D5C53] font-semibold'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
               >
-                {item}
+                {item.label}
                 {isActive && (
                   <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#0E5A52] rounded-full" />
                 )}

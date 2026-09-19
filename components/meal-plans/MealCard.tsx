@@ -127,5 +127,3 @@ export const MealCard: React.FC<MealCardProps> = ({
     </div>
   );
 };
-
-export default MealCard;
