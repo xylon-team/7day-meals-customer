@@ -1,16 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Subscription } from '@/lib/api/subscriptions';
 import Badge from '@/components/Badge';
 import {
   Calendar,
-  Clock,
   Truck,
   Sparkles,
-  Info,
   CalendarDays,
-  SkipForward,
 } from 'lucide-react';
 
 interface UpcomingDeliveriesTimelineProps {
@@ -23,24 +20,15 @@ interface DeliveryCycle {
   cycleWeek: number;
   date: Date;
   subscription: Subscription;
-  timeSlot: string;
-  status: 'confirmed' | 'upcoming' | 'paused' | 'skipped';
 }
-
-const TIME_SLOT_LABELS: Record<string, string> = {
-  morning: 'Morning (7:00 AM - 9:00 AM)',
-  lunch: 'Lunch (11:30 AM - 1:30 PM)',
-  dinner: 'Dinner (6:00 PM - 8:00 PM)',
-};
 
 export const UpcomingDeliveriesTimeline: React.FC<UpcomingDeliveriesTimelineProps> = ({
   subscriptions,
   onEditSchedule,
 }) => {
-  const [skippedCycleIds, setSkippedCycleIds] = useState<Set<string>>(new Set());
-  const [toast, setToast] = useState<string | null>(null);
-
-  const activeSubscriptions = subscriptions.filter((s) => s.status !== 'CANCELLED');
+  const activeSubscriptions = subscriptions.filter(
+    (s) => s.status !== 'CANCELLED' && !s.canceled_date
+  );
 
   if (activeSubscriptions.length === 0) {
     return (
@@ -56,7 +44,7 @@ export const UpcomingDeliveriesTimeline: React.FC<UpcomingDeliveriesTimelineProp
     );
   }
 
-  // Generate 4 weekly delivery cycles per active subscription
+  // Generate 4 weekly recurring delivery cycles based on delivery_preferred_date
   const deliveryCycles: DeliveryCycle[] = [];
   activeSubscriptions.forEach((sub) => {
     const baseDate = new Date(sub.delivery_preferred_date);
@@ -64,17 +52,11 @@ export const UpcomingDeliveriesTimeline: React.FC<UpcomingDeliveriesTimelineProp
       const cycleDate = new Date(baseDate);
       cycleDate.setDate(baseDate.getDate() + i * 7);
 
-      const cycleId = `${sub.subscription_id}-week-${i + 1}`;
-      const isSkipped = skippedCycleIds.has(cycleId);
-      const isPaused = sub.status === 'PAUSED';
-
       deliveryCycles.push({
-        id: cycleId,
+        id: `${sub.subscription_id}-week-${i + 1}`,
         cycleWeek: i + 1,
         date: cycleDate,
         subscription: sub,
-        timeSlot: TIME_SLOT_LABELS[sub.delivery_time_slot] || 'Lunch (11:30 AM - 1:30 PM)',
-        status: isSkipped ? 'skipped' : isPaused ? 'paused' : i === 0 ? 'confirmed' : 'upcoming',
       });
     }
   });
@@ -82,35 +64,8 @@ export const UpcomingDeliveriesTimeline: React.FC<UpcomingDeliveriesTimelineProp
   // Sort cycles by date ascending
   deliveryCycles.sort((a, b) => a.date.getTime() - b.date.getTime());
 
-  const handleToggleSkip = (cycleId: string) => {
-    setSkippedCycleIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(cycleId)) {
-        next.delete(cycleId);
-        showToast('Delivery reinstated for that week');
-      } else {
-        next.add(cycleId);
-        showToast('Skipped delivery for that week. You will not be charged.');
-      }
-      return next;
-    });
-  };
-
-  const showToast = (msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3000);
-  };
-
   return (
     <div className="space-y-6">
-      {/* Toast Notification */}
-      {toast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#0D5C53] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 text-sm font-medium border border-teal-600/40 animate-slide-up">
-          <Info className="w-4 h-4 text-teal-200" />
-          <span>{toast}</span>
-        </div>
-      )}
-
       {/* Header & Notice */}
       <div className="bg-teal-50/70 border border-teal-100 rounded-3xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-start sm:items-center gap-3.5">
@@ -122,7 +77,7 @@ export const UpcomingDeliveriesTimeline: React.FC<UpcomingDeliveriesTimelineProp
               4-Week Recurring Delivery Calendar
             </h3>
             <p className="text-xs text-stone-600 mt-0.5">
-              Deliveries are prepared fresh each morning. You can skip individual weeks anytime up to 24 hours prior.
+              Automated delivery orders are placed weekly based on your preferred delivery date.
             </p>
           </div>
         </div>
@@ -139,17 +94,14 @@ export const UpcomingDeliveriesTimeline: React.FC<UpcomingDeliveriesTimelineProp
             weekday: 'long',
             month: 'short',
             day: 'numeric',
+            year: 'numeric',
           });
 
           return (
             <div
               key={cycle.id}
               className={`p-5 rounded-3xl border transition-all duration-200 bg-white relative overflow-hidden flex flex-col justify-between ${
-                cycle.status === 'skipped'
-                  ? 'border-dashed border-stone-300 bg-stone-50/70 opacity-60'
-                  : cycle.status === 'paused'
-                  ? 'border-amber-200/80 bg-amber-50/20'
-                  : isFirst
+                isFirst
                   ? 'border-teal-300 shadow-sm ring-2 ring-teal-500/10'
                   : 'border-stone-200/80 hover:border-teal-200'
               }`}
@@ -163,24 +115,14 @@ export const UpcomingDeliveriesTimeline: React.FC<UpcomingDeliveriesTimelineProp
                   {isFirst && (
                     <span className="text-[10px] font-extrabold text-[#0D5C53] bg-teal-50 border border-teal-200/60 px-2 py-0.5 rounded-full flex items-center gap-1">
                       <Sparkles className="w-3 h-3 text-[#0D5C53]" />
-                      Next Delivery
+                      Next Scheduled Drop
                     </span>
                   )}
                 </div>
 
-                {cycle.status === 'confirmed' ? (
-                  <Badge variant="success" dot>
-                    Confirmed
-                  </Badge>
-                ) : cycle.status === 'upcoming' ? (
-                  <Badge variant="info">Upcoming</Badge>
-                ) : cycle.status === 'paused' ? (
-                  <Badge variant="warning">Subscription Paused</Badge>
-                ) : (
-                  <Badge variant="default" className="text-stone-500 line-through">
-                    Skipped
-                  </Badge>
-                )}
+                <Badge variant={isFirst ? 'success' : 'info'} dot={isFirst}>
+                  {isFirst ? 'Scheduled' : 'Upcoming'}
+                </Badge>
               </div>
 
               {/* Middle: Delivery Date & Plan */}
@@ -188,11 +130,6 @@ export const UpcomingDeliveriesTimeline: React.FC<UpcomingDeliveriesTimelineProp
                 <div className="flex items-center gap-2 text-gray-900 font-bold text-lg font-serif">
                   <Calendar className="w-4 h-4 text-[#0D5C53] shrink-0" />
                   <span>{formattedDate}</span>
-                </div>
-
-                <div className="flex items-center gap-2 text-xs text-stone-600">
-                  <Clock className="w-3.5 h-3.5 text-stone-400 shrink-0" />
-                  <span>{cycle.timeSlot}</span>
                 </div>
 
                 <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs">
@@ -206,24 +143,12 @@ export const UpcomingDeliveriesTimeline: React.FC<UpcomingDeliveriesTimelineProp
               </div>
 
               {/* Bottom Actions */}
-              <div className="pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
+              <div className="pt-3 border-t border-stone-100 flex items-center justify-end">
                 <button
                   onClick={() => onEditSchedule(cycle.subscription)}
                   className="text-stone-500 hover:text-[#0D5C53] text-xs font-semibold hover:underline cursor-pointer"
                 >
-                  Adjust Time Slot
-                </button>
-
-                <button
-                  onClick={() => handleToggleSkip(cycle.id)}
-                  className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition-colors cursor-pointer flex items-center gap-1 ${
-                    cycle.status === 'skipped'
-                      ? 'bg-teal-50 text-[#0D5C53] hover:bg-teal-100'
-                      : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-rose-600'
-                  }`}
-                >
-                  <SkipForward className="w-3.5 h-3.5" />
-                  {cycle.status === 'skipped' ? 'Unskip Week' : 'Skip Week'}
+                  Change Delivery Date
                 </button>
               </div>
             </div>

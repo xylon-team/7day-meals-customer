@@ -2,12 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { Subscription } from '@/lib/api/subscriptions';
-import { fetchMealPlanById, ApiMealPlan, ApiMealPlanFoodItem } from '@/lib/api/meals';
+import { fetchMealPlanById, ApiMealPlan, ApiMealPlanFoodItem, getMealImage } from '@/lib/api/meals';
 import Badge from '@/components/Badge';
 import {
   X,
   Utensils,
   AlertCircle,
+  Calendar,
+  CalendarDays,
 } from 'lucide-react';
 
 interface SubscriptionDetailModalProps {
@@ -68,18 +70,12 @@ export const SubscriptionDetailModal: React.FC<SubscriptionDetailModalProps> = (
       >
         {/* Banner Image & Header */}
         <div className="relative h-48 bg-stone-100 overflow-hidden shrink-0">
-          {meal?.image_path ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={meal.image_path}
-              alt={meal.item_name}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-teal-50 flex items-center justify-center text-[#0D5C53]">
-              <Utensils className="w-10 h-10" />
-            </div>
-          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={getMealImage(meal)}
+            alt={meal?.item_name || 'Meal Plan'}
+            className="w-full h-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
           {/* Close Button */}
@@ -110,7 +106,7 @@ export const SubscriptionDetailModal: React.FC<SubscriptionDetailModalProps> = (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-100">
             <p className="text-sm text-stone-600 max-w-lg leading-relaxed">
               {meal?.description ||
-                'Enjoy authentic Sri Lankan flavors delivered right to your doorstep with our 7-day revolving meal rotation.'}
+                'Enjoy authentic Sri Lankan flavors delivered right to your doorstep with our revolving meal rotation.'}
             </p>
             <div className="text-right shrink-0">
               <span className="text-xs text-stone-500 font-medium block">Weekly Subscription</span>
@@ -121,27 +117,43 @@ export const SubscriptionDetailModal: React.FC<SubscriptionDetailModalProps> = (
           </div>
 
           {/* Current Schedule Summary */}
-          <div className="bg-[#FAFAF8] p-4 rounded-2xl border border-stone-200/70 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div className="bg-[#FAFAF8] p-4 rounded-2xl border border-stone-200/70 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div>
-              <span className="text-stone-500 block mb-1 font-medium">Next Delivery</span>
-              <span className="font-bold text-gray-900">
+              <span className="text-stone-500 block mb-1 font-medium flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-[#0D5C53]" />
+                Preferred Delivery Date
+              </span>
+              <span className="font-bold text-gray-900 text-sm">
                 {new Date(subscription.delivery_preferred_date).toLocaleDateString('en-US', {
                   weekday: 'short',
                   month: 'short',
                   day: 'numeric',
+                  year: 'numeric',
                 })}
               </span>
             </div>
             <div>
-              <span className="text-stone-500 block mb-1 font-medium">Time Window</span>
-              <span className="font-bold text-gray-900 capitalize">
-                {subscription.delivery_time_slot}
+              <span className="text-stone-500 block mb-1 font-medium flex items-center gap-1.5">
+                <CalendarDays className="w-3.5 h-3.5 text-[#0D5C53]" />
+                Next Cycle Date
               </span>
-            </div>
-            <div>
-              <span className="text-stone-500 block mb-1 font-medium">Schedule Days</span>
-              <span className="font-bold text-gray-900">
-                {subscription.delivery_days?.length || 7} Days / Week
+              <span className="font-bold text-gray-900 text-sm">
+                {subscription.next_delivery_date
+                  ? new Date(subscription.next_delivery_date).toLocaleDateString('en-US', {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })
+                  : new Date(
+                      new Date(subscription.delivery_preferred_date).getTime() +
+                        7 * 24 * 60 * 60 * 1000
+                    ).toLocaleDateString('en-US', {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
               </span>
             </div>
           </div>
