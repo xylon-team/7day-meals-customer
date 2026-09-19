@@ -4,9 +4,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8007';
 
 // ─── Types & Interfaces ───────────────────────────────────────────────────────
 
-export type SubscriptionStatus = 'ACTIVE' | 'PAUSED' | 'CANCELLED';
-export type DeliveryTimeSlot = 'morning' | 'lunch' | 'dinner';
-export type SubscriptionFrequency = 'weekly' | 'bi-weekly';
+export type SubscriptionStatus = 'ACTIVE' | 'CANCELLED';
 
 export interface Subscription {
   subscription_id: number;
@@ -17,37 +15,22 @@ export interface Subscription {
   delivery_preferred_date: string;
   next_delivery_date?: string | null;
   status: SubscriptionStatus;
-  delivery_time_slot?: DeliveryTimeSlot;
-  frequency?: SubscriptionFrequency;
-  delivery_days?: string[];
-  special_instructions?: string;
   meal_plan?: ApiMealPlan;
   customer_order?: any[];
 }
 
 export interface CreateSubscriptionPayload {
-  customer_id?: number;
   meal_id: number;
   delivery_preferred_date: string;
-  delivery_time_slot?: DeliveryTimeSlot;
-  frequency?: SubscriptionFrequency;
-  delivery_days?: string[];
-  special_instructions?: string;
 }
 
 export interface UpdateSubscriptionPayload {
-  delivery_preferred_date?: string;
-  delivery_time_slot?: DeliveryTimeSlot;
-  frequency?: SubscriptionFrequency;
-  delivery_days?: string[];
-  special_instructions?: string;
-  status?: SubscriptionStatus;
+  delivery_preferred_date: string;
 }
 
-// ─── Helper: Format / Normalize Backend Subscription Data ────────────────────
+// ─── Helper: Normalize Backend Subscription Data ──────────────────────────────
 
 function normalizeSubscription(item: any): Subscription {
-  const isCanceled = Boolean(item.canceled_date);
   return {
     subscription_id: item.subscription_id,
     customer_id: item.customer_id,
@@ -56,11 +39,7 @@ function normalizeSubscription(item: any): Subscription {
     canceled_date: item.canceled_date ?? null,
     delivery_preferred_date: item.delivery_preferred_date,
     next_delivery_date: item.next_delivery_date ?? null,
-    status: isCanceled ? 'CANCELLED' : (item.status || 'ACTIVE'),
-    delivery_time_slot: item.delivery_time_slot || 'lunch',
-    frequency: item.frequency || 'weekly',
-    delivery_days: item.delivery_days || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-    special_instructions: item.special_instructions || '',
+    status: item.canceled_date ? 'CANCELLED' : 'ACTIVE',
     meal_plan: item.meal_plan,
     customer_order: item.customer_order || [],
   };
@@ -154,13 +133,7 @@ export async function createSubscription(
   }
 
   const data = await res.json();
-  return normalizeSubscription({
-    ...data,
-    delivery_time_slot: payload.delivery_time_slot || 'lunch',
-    frequency: payload.frequency || 'weekly',
-    delivery_days: payload.delivery_days || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-    special_instructions: payload.special_instructions || '',
-  });
+  return normalizeSubscription(data);
 }
 
 /**

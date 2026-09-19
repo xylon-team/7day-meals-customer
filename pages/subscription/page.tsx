@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
-import { Badge } from '@/components/Badge';
 import { Button } from '@/components/Button';
 import { useStore } from '@/store/useStore';
 import { fetchMealPlans, ApiMealPlan } from '@/lib/api/meals';
@@ -22,25 +21,22 @@ import { SubscriptionCard } from '@/components/subscription/SubscriptionCard';
 import { UpcomingDeliveriesTimeline } from '@/components/subscription/UpcomingDeliveriesTimeline';
 import { SubscribeWizardModal } from '@/components/subscription/SubscribeWizardModal';
 import { EditScheduleModal } from '@/components/subscription/EditScheduleModal';
-import { PauseResumeModal } from '@/components/subscription/PauseResumeModal';
 import { CancelSubscriptionModal } from '@/components/subscription/CancelSubscriptionModal';
 import { SubscriptionDetailModal } from '@/components/subscription/SubscriptionDetailModal';
 
 import {
   Repeat,
   Calendar,
-  Clock,
   Plus,
   Sparkles,
-  ShieldCheck,
   CheckCircle2,
   AlertCircle,
-  Truck,
   Utensils,
   History,
   CalendarDays,
   Flame,
 } from 'lucide-react';
+import Badge from '@/components/Badge';
 
 type TabType = 'active' | 'timeline' | 'explore' | 'history';
 
@@ -60,7 +56,6 @@ export default function SubscriptionPage() {
   const [wizardPreselectedMealId, setWizardPreselectedMealId] = useState<number | null>(null);
 
   const [editingSub, setEditingSub] = useState<Subscription | null>(null);
-  const [pauseResumeSub, setPauseResumeSub] = useState<Subscription | null>(null);
   const [cancellingSub, setCancellingSub] = useState<Subscription | null>(null);
   const [viewingDetailSub, setViewingDetailSub] = useState<Subscription | null>(null);
 
@@ -108,28 +103,25 @@ export default function SubscriptionPage() {
     }
   }, [mounted, isAuthenticated, loadData, router]);
 
-  // Derived collections
+  // Derived collections (strictly by canceled_date)
   const activeSubs = useMemo(
-    () => subscriptions.filter((s) => s.status === 'ACTIVE' || s.status === 'PAUSED'),
+    () => subscriptions.filter((s) => !s.canceled_date),
     [subscriptions]
   );
 
   const cancelledSubs = useMemo(
-    () => subscriptions.filter((s) => s.status === 'CANCELLED'),
+    () => subscriptions.filter((s) => Boolean(s.canceled_date)),
     [subscriptions]
   );
 
   // Metrics
   const totalWeeklySpend = useMemo(() => {
-    return activeSubs
-      .filter((s) => s.status === 'ACTIVE')
-      .reduce((sum, s) => sum + Number(s.meal_plan?.price || 0), 0);
+    return activeSubs.reduce((sum, s) => sum + Number(s.meal_plan?.price || 0), 0);
   }, [activeSubs]);
 
   const nextUpcomingDelivery = useMemo(() => {
-    const activeOnly = activeSubs.filter((s) => s.status === 'ACTIVE');
-    if (activeOnly.length === 0) return null;
-    const sorted = [...activeOnly].sort(
+    if (activeSubs.length === 0) return null;
+    const sorted = [...activeSubs].sort(
       (a, b) =>
         new Date(a.delivery_preferred_date).getTime() -
         new Date(b.delivery_preferred_date).getTime()
@@ -169,22 +161,6 @@ export default function SubscriptionPage() {
       prev.map((s) => (s.subscription_id === subscriptionId ? { ...s, ...updated } : s))
     );
     showToast('Delivery schedule updated successfully!');
-  };
-
-  const handleTogglePause = async (subscriptionId: number, isPaused: boolean) => {
-    // Local pause simulation if needed
-    setSubscriptions((prev) =>
-      prev.map((s) =>
-        s.subscription_id === subscriptionId
-          ? { ...s, status: isPaused ? 'PAUSED' : 'ACTIVE' }
-          : s
-      )
-    );
-    showToast(
-      isPaused
-        ? 'Subscription paused. Deliveries on hold.'
-        : 'Subscription resumed! Automated deliveries active.'
-    );
   };
 
   const handleCancelSubscription = async (subscriptionId: number) => {
@@ -271,10 +247,10 @@ export default function SubscriptionPage() {
                 Active Plans
               </span>
               <span className="text-2xl font-extrabold text-gray-900">
-                {activeSubs.filter((s) => s.status === 'ACTIVE').length}
+                {activeSubs.length}
               </span>
               <span className="text-[10px] text-stone-400 block">
-                {activeSubs.filter((s) => s.status === 'PAUSED').length} paused
+                Weekly recurring
               </span>
             </div>
           </div>
@@ -298,7 +274,7 @@ export default function SubscriptionPage() {
                   : 'No scheduled drops'}
               </span>
               <span className="text-[10px] text-[#0D5C53] font-semibold">
-                {nextUpcomingDelivery ? `${nextUpcomingDelivery.delivery_time_slot} slot` : 'All caught up'}
+                {nextUpcomingDelivery ? 'Automated weekly cycle' : 'All caught up'}
               </span>
             </div>
           </div>
@@ -325,13 +301,13 @@ export default function SubscriptionPage() {
           <div className="bg-gradient-to-br from-[#0D5C53] to-[#083E38] text-white p-5 rounded-3xl shadow-xs flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-[10px] uppercase font-bold text-teal-200 tracking-wider">
-                Subscriber Perk
+                Automated Plan
               </span>
               <Sparkles className="w-4 h-4 text-teal-300" />
             </div>
             <div className="my-1">
-              <div className="text-sm font-bold leading-tight">10% Weekly Discount</div>
-              <div className="text-[10px] text-teal-100/90 mt-0.5">Free hot-box delivery included</div>
+              <div className="text-sm font-bold leading-tight">Recurring Deliveries</div>
+              <div className="text-[10px] text-teal-100/90 mt-0.5">Automated orders placed every 7 days</div>
             </div>
           </div>
         </div>
@@ -435,7 +411,7 @@ export default function SubscriptionPage() {
                         No Active Meal Subscriptions
                       </h3>
                       <p className="text-sm text-stone-500 mb-6 leading-relaxed">
-                        Automate your weekly Sri Lankan meals! Choose a meal plan, pick your preferred delivery time, and enjoy fresh hot meals delivered right to your door every week.
+                        Automate your weekly Sri Lankan meals! Choose a meal plan, pick your preferred delivery date, and enjoy fresh meals delivered right to your door every week.
                       </p>
                       <Button
                         variant="primary"
@@ -456,7 +432,6 @@ export default function SubscriptionPage() {
                           key={sub.subscription_id}
                           subscription={sub}
                           onEditSchedule={(s) => setEditingSub(s)}
-                          onTogglePause={(s) => setPauseResumeSub(s)}
                           onCancel={(s) => setCancellingSub(s)}
                           onViewMenu={(s) => setViewingDetailSub(s)}
                         />
@@ -529,7 +504,7 @@ export default function SubscriptionPage() {
 
                           <div className="pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
                             <span className="text-[11px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md">
-                              Save 10% Weekly
+                              Automated Weekly
                             </span>
                             <Button
                               variant="primary"
@@ -565,7 +540,6 @@ export default function SubscriptionPage() {
                           key={sub.subscription_id}
                           subscription={sub}
                           onEditSchedule={() => {}}
-                          onTogglePause={() => {}}
                           onCancel={() => {}}
                           onViewMenu={(s) => setViewingDetailSub(s)}
                           onReactivate={(s) => handleReactivate(s)}
@@ -596,22 +570,11 @@ export default function SubscriptionPage() {
         onSave={handleSaveSchedule}
       />
 
-      <PauseResumeModal
-        isOpen={Boolean(pauseResumeSub)}
-        subscription={pauseResumeSub}
-        onClose={() => setPauseResumeSub(null)}
-        onConfirm={handleTogglePause}
-      />
-
       <CancelSubscriptionModal
         isOpen={Boolean(cancellingSub)}
         subscription={cancellingSub}
         onClose={() => setCancellingSub(null)}
         onConfirmCancel={handleCancelSubscription}
-        onSwitchToPause={(s) => {
-          setCancellingSub(null);
-          setPauseResumeSub(s);
-        }}
       />
 
       <SubscriptionDetailModal

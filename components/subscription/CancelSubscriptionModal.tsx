@@ -3,14 +3,13 @@
 import React, { useState } from 'react';
 import { Subscription } from '@/lib/api/subscriptions';
 import Button from '@/components/Button';
-import { X, AlertTriangle, AlertCircle, PauseCircle } from 'lucide-react';
+import { X, AlertTriangle, AlertCircle } from 'lucide-react';
 
 interface CancelSubscriptionModalProps {
   isOpen: boolean;
   subscription: Subscription | null;
   onClose: () => void;
   onConfirmCancel: (subscriptionId: number) => Promise<void>;
-  onSwitchToPause: (subscription: Subscription) => void;
 }
 
 export const CancelSubscriptionModal: React.FC<CancelSubscriptionModalProps> = ({
@@ -18,7 +17,6 @@ export const CancelSubscriptionModal: React.FC<CancelSubscriptionModalProps> = (
   subscription,
   onClose,
   onConfirmCancel,
-  onSwitchToPause,
 }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,34 +58,13 @@ export const CancelSubscriptionModal: React.FC<CancelSubscriptionModalProps> = (
           Cancel Meal Subscription?
         </h3>
 
-        <p className="text-sm text-stone-600 leading-relaxed mb-4">
+        <p className="text-sm text-stone-600 leading-relaxed mb-6">
           Are you sure you want to cancel your recurring subscription for{' '}
           <strong className="text-gray-900">
             {subscription.meal_plan?.item_name || 'this meal plan'}
           </strong>
           ? All future automated recurring deliveries will be stopped.
         </p>
-
-        {/* Alternative: Suggest Pausing */}
-        <div className="p-4 bg-teal-50/70 border border-teal-100 rounded-2xl mb-6 flex items-center justify-between gap-3">
-          <div>
-            <span className="text-xs font-bold text-[#0D5C53] block">Going away for a while?</span>
-            <span className="text-[11px] text-stone-600">
-              You can pause deliveries instead of cancelling and keep your preferences intact.
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              onClose();
-              onSwitchToPause(subscription);
-            }}
-            className="shrink-0 bg-white hover:bg-teal-50 text-[#0D5C53] border border-teal-200 text-xs font-bold px-3 py-1.5 rounded-xl transition-colors cursor-pointer flex items-center gap-1"
-          >
-            <PauseCircle className="w-3.5 h-3.5" />
-            Pause Instead
-          </button>
-        </div>
 
         {error && (
           <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs mb-4 flex items-center gap-2">
