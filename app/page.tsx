@@ -1,7 +1,7 @@
 'use client';
 
-import MealPlansPage from '@/pages/meal-plans/page';
+import HomePage from '@/pages/home/page';
 
 export default function Home() {
-  return <MealPlansPage />;
+  return <HomePage />;
 }

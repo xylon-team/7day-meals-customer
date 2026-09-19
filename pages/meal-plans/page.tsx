@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Header } from '@/components/Header';
+import { PublicHeader } from '@/components/PublicHeader';
 import { Footer } from '@/components/Footer';
 import { MealCard } from '@/components/meal-plans/MealCard';
 import { FilterBar, CategoryFilter, SortOption } from '@/components/meal-plans/FilterBar';
@@ -22,7 +23,7 @@ export default function MealPlansPage() {
   const [sortBy, setSortBy] = useState<SortOption>('popularity');
   const [selectedMealDetail, setSelectedMealDetail] = useState<MealPlan | null>(null);
 
-  const { cart, addToCart } = useStore();
+  const { cart, addToCart, isAuthenticated } = useStore();
   const [mounted, setMounted] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -113,10 +114,14 @@ export default function MealPlansPage() {
       )}
 
       {/* Navigation Header */}
-      <Header
-        cartCount={mounted ? cart.reduce((sum, item) => sum + item.quantity, 0) : 0}
-        activeTab="Meals"
-      />
+      {mounted && isAuthenticated ? (
+        <Header
+          cartCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
+          activeTab="Meals"
+        />
+      ) : (
+        <PublicHeader activePage="meal-plans" />
+      )}
 
       {/* Main Content Body */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">

@@ -6,16 +6,16 @@ import { MapPin, Phone, Mail, MessageSquare } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="bg-[#082825] text-white pt-16 pb-8 border-t border-teal-900/40">
+    <footer className="bg-[#072F2B] text-white pt-16 pb-8 border-t border-teal-950/40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Top 4 Columns Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 pb-12 border-b border-teal-800/40">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 pb-12 border-b border-teal-800/20">
           
           {/* Col 1: Brand Info */}
           <div className="space-y-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-full bg-[#0D5C53] flex items-center justify-center text-white font-bold text-sm shadow-sm">
+              <div className="w-9 h-9 rounded-full bg-[#0E5A52] flex items-center justify-center text-white font-bold text-sm shadow-xs">
                 7D
               </div>
               <span className="font-serif text-2xl font-bold tracking-tight text-white">
