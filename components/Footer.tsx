@@ -38,13 +38,13 @@ export const Footer: React.FC = () => {
                 <Link href="/about" className="hover:text-white transition-colors">About Us</Link>
               </li>
               <li>
-                <Link href="/services" className="hover:text-white transition-colors">Services</Link>
+                <Link href="/about#services" className="hover:text-white transition-colors">Services</Link>
               </li>
               <li>
                 <Link href="/meal-plans" className="hover:text-white transition-colors">Meal Plans</Link>
               </li>
               <li>
-                <Link href="/contact" className="hover:text-white transition-colors">Contact Us</Link>
+                <Link href="/about#contact" className="hover:text-white transition-colors">Contact Us</Link>
               </li>
             </ul>
           </div>
@@ -72,7 +72,7 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* Col 4: Contact Info */}
-          <div>
+          <div id="contact">
             <h4 className="font-serif text-lg font-bold text-white mb-4">Contact Info</h4>
             <ul className="space-y-3 text-sm text-stone-300">
               <li className="flex items-start gap-3">

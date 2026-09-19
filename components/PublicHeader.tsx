@@ -24,9 +24,9 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({ activePage }) => {
   const navItems = [
     { label: 'Home', href: '/', id: 'home' },
     { label: 'About Us', href: '/about', id: 'about' },
-    { label: 'Services', href: '/services', id: 'services' },
+    { label: 'Services', href: '/about#services', id: 'services' },
     { label: 'Meal Plans', href: '/meal-plans', id: 'meal-plans' },
-    { label: 'Contact Us', href: '/contact', id: 'contact' },
+    { label: 'Contact Us', href: '/about#contact', id: 'contact' },
   ];
 
   return (
