@@ -71,9 +71,10 @@ export default function OrdersPage() {
   
   // Rate Modal State
   const [selectedOrderRate, setSelectedOrderRate] = useState<OrderItem | null>(null);
-  const [ratingStars, setRatingStars] = useState<number>(5);
+  const [ratingStars, setRatingStars] = useState<number>(0);
   const [ratingComment, setRatingComment] = useState<string>('');
   const [rateSuccess, setRateSuccess] = useState<boolean>(false);
+  const [ratingError, setRatingError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadOrders = async () => {
@@ -129,11 +130,22 @@ export default function OrdersPage() {
 
   const handleRateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (ratingStars === 0) {
+      setRatingError('Please select a star rating.');
+      return;
+    }
+    if (ratingComment.length > 500) {
+      setRatingError('Review must be 500 characters or less.');
+      return;
+    }
+    
+    setRatingError(null);
     setRateSuccess(true);
     setTimeout(() => {
       setRateSuccess(false);
       setSelectedOrderRate(null);
       setRatingComment('');
+      setRatingStars(0);
     }, 1500);
   };
 
@@ -272,7 +284,9 @@ export default function OrdersPage() {
                       onClick={() => {
                         setSelectedOrderRate(order);
                         setRateSuccess(false);
-                        setRatingStars(5);
+                        setRatingStars(0);
+                        setRatingComment('');
+                        setRatingError(null);
                       }}
                       className="bg-transparent border border-[#0E5A52] hover:bg-[#EBF4F1] text-[#0E5A52] font-semibold text-xs py-1.5 px-4 rounded-full transition-colors flex items-center justify-center gap-1 cursor-pointer"
                     >
@@ -344,10 +358,23 @@ export default function OrdersPage() {
                     rows={3}
                     placeholder="Tell us about the taste, delivery, or packaging..."
                     value={ratingComment}
-                    onChange={(e) => setRatingComment(e.target.value)}
+                    maxLength={500}
+                    onChange={(e) => {
+                      setRatingComment(e.target.value);
+                      if (ratingError) setRatingError(null);
+                    }}
                     className="w-full bg-[#FAF8F5] border border-stone-200 rounded-xl p-3 text-xs text-stone-800 placeholder:text-stone-400 focus:outline-none focus:border-[#0E5A52]"
                   />
+                  <div className="text-right mt-1 text-[10px] text-stone-400">
+                    {ratingComment.length}/500
+                  </div>
                 </div>
+
+                {ratingError && (
+                  <div className="text-rose-600 text-xs font-medium text-center bg-rose-50 p-2 rounded-xl border border-rose-100">
+                    {ratingError}
+                  </div>
+                )}
 
                 <div className="flex items-center gap-3 pt-2">
                   <button
