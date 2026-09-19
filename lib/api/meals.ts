@@ -42,7 +42,7 @@ export interface QueryMealParams {
 }
 
 // Fallback high quality food imagery
-const FALLBACK_IMAGES: Record<string, string> = {
+export const FALLBACK_IMAGES: Record<string, string> = {
   vegetarian: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=800&q=80',
   'non-veg': 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=800&q=80',
   vegan: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=800&q=80',
@@ -52,7 +52,20 @@ const FALLBACK_IMAGES: Record<string, string> = {
   balanced: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=800&q=80',
 };
 
-const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
+export const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
+
+export function getMealImage(meal?: Partial<ApiMealPlan> | null): string {
+  if (!meal) return DEFAULT_IMAGE;
+  const raw = meal.image_path?.trim();
+  if (raw && (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('/') || raw.startsWith('data:'))) {
+    return raw;
+  }
+  const key = (meal.dietary_preference || meal.category || meal.item_name || '').toLowerCase();
+  for (const [categoryKey, url] of Object.entries(FALLBACK_IMAGES)) {
+    if (key.includes(categoryKey)) return url;
+  }
+  return DEFAULT_IMAGE;
+}
 
 // ─── Internal helper ──────────────────────────────────────────────────────────
 
