@@ -5,7 +5,34 @@ import { MealPlan } from '@/lib/data/meal-plans';
 import { fetchMealPlanById, ApiMealPlan, ApiMealPlanFoodItem } from '@/lib/api/meals';
 import Badge from '@/components/Badge';
 import Button from '@/components/Button';
-import { X, Calendar, Utensils, AlertCircle, ShoppingBag } from 'lucide-react';
+import { X, Calendar, Utensils, AlertCircle, ShoppingBag, Star } from 'lucide-react';
+
+const MOCK_REVIEWS = [
+  {
+    id: 1,
+    name: 'Kasun P.',
+    rating: 5,
+    date: 'Oct 20, 2023',
+    comment: 'Absolutely loved the authentic taste. The portions were great and delivery was always on time!'
+  },
+  {
+    id: 2,
+    name: 'Nadeesha S.',
+    rating: 4,
+    date: 'Oct 15, 2023',
+    comment: 'Very good meal plan. Some dishes were a bit too spicy for me, but overall excellent quality.'
+  },
+  {
+    id: 3,
+    name: 'Nuwan W.',
+    rating: 5,
+    date: 'Oct 10, 2023',
+    comment: 'The best decision I made this month. Saves so much time and the food feels like home.'
+  }
+];
+
+const AVERAGE_RATING = 4.7;
+const TOTAL_REVIEWS = 24;
 
 interface MealDetailModalProps {
   plan: MealPlan | null;
@@ -183,6 +210,41 @@ export const MealDetailModal: React.FC<MealDetailModalProps> = ({
             <div>
               <span className="font-bold block text-[#0D5C53]">7-Day Fresh Delivery</span>
               Flexible delivery options available during checkout. Delivered hot and fresh.
+            </div>
+          </div>
+
+          {/* Customer Reviews */}
+          <div>
+            <h3 className="text-base font-bold text-gray-900 mb-3 flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                Customer Reviews
+              </span>
+              <span className="text-xs font-medium text-stone-500">
+                {AVERAGE_RATING} / 5 ({TOTAL_REVIEWS} reviews)
+              </span>
+            </h3>
+            
+            <div className="space-y-3">
+              {MOCK_REVIEWS.map((review) => (
+                <div key={review.id} className="p-4 bg-white rounded-2xl border border-stone-200/60 flex flex-col gap-2 shadow-2xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-900">{review.name}</span>
+                    <span className="text-[10px] text-stone-500">{review.date}</span>
+                  </div>
+                  <div className="flex items-center gap-0.5">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`w-3.5 h-3.5 ${
+                          star <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-stone-200 fill-stone-200'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-xs text-stone-600 mt-1 leading-relaxed">{review.comment}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
