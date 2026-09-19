@@ -21,11 +21,35 @@ export const Header: React.FC<HeaderProps> = ({ cartCount, activeTab = 'Home' })
   ];
   const { user, isAuthenticated, token, logout, cart } = useStore();
   const [mounted, setMounted] = useState(false);
+  const [unreadNotifCount, setUnreadNotifCount] = useState<number>(0);
   const router = useRouter();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!mounted || !isAuthenticated || !user?.customer_id) return;
+
+    const checkNotifications = () => {
+      import('@/lib/api/notifications')
+        .then(({ fetchUserNotifications }) =>
+          fetchUserNotifications(user.customer_id!, token)
+        )
+        .then((notifs) => {
+          const count = notifs.filter((n) => !n.read_at).length;
+          setUnreadNotifCount(count);
+        })
+        .catch(() => {
+          // Ignore background fetch error in header
+        });
+    };
+
+    checkNotifications();
+    const interval = setInterval(checkNotifications, 1000); // Live poll every 1 second
+
+    return () => clearInterval(interval);
+  }, [mounted, isAuthenticated, user?.customer_id, token]);
 
   const displayName = mounted ? user.name.split(' ')[0] : '';
   const displayInitial = mounted ? (user.name.charAt(0).toUpperCase() || '?') : '?';
@@ -98,6 +122,11 @@ export const Header: React.FC<HeaderProps> = ({ cartCount, activeTab = 'Home' })
             aria-label="Notifications"
           >
             <Bell className="w-5 h-5 stroke-[1.8]" />
+            {unreadNotifCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-[#0D5C53] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-scale-in">
+                {unreadNotifCount}
+              </span>
+            )}
           </Link>
 
           {/* Shopping Cart Icon */}
