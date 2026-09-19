@@ -15,7 +15,8 @@ import {
   Package, 
   Utensils, 
   MapPin, 
-  CreditCard 
+  CreditCard,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface OrderDetailData {
@@ -62,20 +63,22 @@ export default function IndividualOrderPage() {
   const searchParams = useSearchParams();
   const orderIdParam = searchParams ? searchParams.get('id') : null;
   const { user, token } = useStore();
-  const [order, setOrder] = useState<OrderDetailData>(SAMPLE_INDIVIDUAL_ORDER);
-  const [loading, setLoading] = useState(false);
+  const [order, setOrder] = useState<OrderDetailData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     if (orderIdParam && user?.customer_id && token) {
       const numericId = orderIdParam.replace(/[^0-9]/g, '');
       if (numericId) {
         setLoading(true);
+        setFetchError(null);
         fetchOrderById(user.customer_id, numericId, token)
           .then((data: any) => {
             if (data) {
               setOrder({
                 orderId: `#${data.order_id || numericId}`,
-placedDate: new Date(data.order_timestamp || data.created_at || Date.now()).toLocaleString('en-US', {
+                placedDate: new Date(data.order_timestamp || data.created_at || Date.now()).toLocaleString('en-US', {
                   month: 'short',
                   day: 'numeric',
                   year: 'numeric',
@@ -92,17 +95,17 @@ placedDate: new Date(data.order_timestamp || data.created_at || Date.now()).toLo
                       minute: '2-digit',
                       hour12: true
                     })
-                  : 'Sep 16, 2026, 12:00 PM',
+                  : 'Not specified',
                 orderStatus: data.order_status || 'Pending',
                 paymentStatus: data.payment_status || 'Unpaid',
                 deliveryStatus: data.delivery_status || 'Not dispatched',
-                mealTitle: data.meal_name || 'Traditional Weekly Feast',
-                mealDescription: data.meal_description || 'Our flagship seven-day plan. Rotating rice and curry with fish, chicken and village vegetables, cooked the way it is at home.',
+                mealTitle: data.meal_name || 'Meal Plan',
+                mealDescription: data.meal_description || '',
                 mealTags: ['Weekly', 'Non-Veg'],
                 mealImage: '/sri_lankan_traditional_feast.png',
-                totalAmount: `Rs. ${data.total_amount ? Number(data.total_amount).toLocaleString() : '8,500'}`,
-                customerId: data.customer_id || 1,
-                mealId: data.meal_id || 1,
+                totalAmount: `Rs. ${data.total_amount ? Number(data.total_amount).toLocaleString() : '0'}`,
+                customerId: data.customer_id || '',
+                mealId: data.meal_id || '',
                 riderId: data.rider_id || 'Not assigned',
                 offerId: data.offer_id || 'None',
                 subscribedMeal: data.is_a_subscribed_meal ? 'Yes' : 'No',
@@ -116,17 +119,23 @@ placedDate: new Date(data.order_timestamp || data.created_at || Date.now()).toLo
               });
             }
           })
-          .catch(() => {
-            // Keep default sample data if API call fails
+          .catch((err: any) => {
+            // Show a real error state — do NOT display fabricated sample data
+            setFetchError(err?.message || 'Could not load order details. Please try again.');
           })
           .finally(() => {
             setLoading(false);
           });
+      } else {
+        setFetchError('Invalid order ID.');
+        setLoading(false);
       }
+    } else {
+      setLoading(false);
     }
-  }, [orderIdParam, token]);
+  }, [orderIdParam, token, user?.customer_id]);
 
-  const rawOrderIdNumber = order.orderId.replace('#', '');
+  const rawOrderIdNumber = order?.orderId?.replace('#', '') ?? orderIdParam ?? '';
 
   return (
     <div className="min-h-screen bg-[#FAF8F5] text-stone-900 flex flex-col font-sans">
@@ -149,7 +158,20 @@ placedDate: new Date(data.order_timestamp || data.created_at || Date.now()).toLo
           <div className="flex justify-center items-center py-20">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0E5A52]" />
           </div>
-        ) : (
+        ) : fetchError ? (
+          /* Error / Not Found State */
+          <div className="bg-white rounded-2xl border border-[#ECE9E0] p-12 text-center flex flex-col items-center justify-center">
+            <AlertTriangle className="w-12 h-12 text-rose-300 mb-3" />
+            <h2 className="text-lg font-bold text-stone-900 mb-1">Order Not Found</h2>
+            <p className="text-stone-500 text-sm max-w-sm mb-6">{fetchError}</p>
+            <Link
+              href="/orders"
+              className="bg-[#0E5A52] hover:bg-[#09433D] text-white font-semibold py-2.5 px-6 rounded-xl text-sm transition-colors"
+            >
+              Back to Orders
+            </Link>
+          </div>
+        ) : order ? (
           <div className="space-y-6">
 
             {/* Top Summary Card with Timeline Tracker */}
@@ -394,7 +416,7 @@ placedDate: new Date(data.order_timestamp || data.created_at || Date.now()).toLo
             </div>
 
           </div>
-        )}
+        ) : null}
 
       </main>
 

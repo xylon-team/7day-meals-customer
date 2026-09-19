@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
@@ -121,10 +121,12 @@ const RATING_LABELS: Record<number, string> = {
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function OrdersPage() {
   const { user, token } = useStore();
-  const [orders, setOrders] = useState<OrderItem[]>(SAMPLE_ORDERS);
+  const [orders, setOrders] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const categoryTabsRef = useRef<HTMLDivElement>(null);
 
   // Rate Modal State
   const [selectedOrderRate, setSelectedOrderRate] = useState<OrderItem | null>(null);
@@ -143,33 +145,36 @@ export default function OrdersPage() {
       if (user?.customer_id && token) {
         try {
           const apiData = await fetchUserOrders(user.customer_id, token);
-          if (apiData && apiData.length > 0) {
-            const mappedApiOrders: OrderItem[] = apiData.map((order: any) => ({
-              id: `ord-${order.order_id}`,
-              orderNumber: `#ORD-${order.order_id}`,
-              rawId: String(order.order_id),
-              mealId: order.meal_id,
-              status: order.order_status || 'Processing',
-              date: new Date(order.order_timestamp || order.created_at || Date.now()).toLocaleDateString(
-                'en-US',
-                { month: 'short', day: 'numeric', year: 'numeric' },
-              ),
-              items: order.meal_name || order.items_description || `Meal Plan #${order.meal_id || '101'}`,
-              price: `Rs. ${order.total_amount || '0'}`,
-              rawPrice: order.total_amount || 0,
-              deliveryAddress: order.address || 'Colombo, Sri Lanka',
-              paymentStatus: order.payment_status || 'PAID',
-            }));
-
-setOrders(mappedApiOrders);
-          }
-        } catch {
-          setOrders(SAMPLE_ORDERS);
+          // Replace state with API result (even if empty array)
+          const mappedOrders: OrderItem[] = Array.isArray(apiData)
+            ? apiData.map((order: any) => ({
+                id: `ord-${order.order_id}`,
+                orderNumber: `#ORD-${order.order_id}`,
+                rawId: String(order.order_id),
+                mealId: order.meal_id,
+                status: order.order_status || 'Processing',
+                date: new Date(order.order_timestamp || order.created_at || Date.now()).toLocaleDateString(
+                  'en-US',
+                  { month: 'short', day: 'numeric', year: 'numeric' },
+                ),
+                items: order.meal_name || order.items_description || `Meal Plan #${order.meal_id || '101'}`,
+                price: `Rs. ${order.total_amount || '0'}`,
+                rawPrice: order.total_amount || 0,
+                deliveryAddress: order.address || 'Colombo, Sri Lanka',
+                paymentStatus: order.payment_status || 'PAID',
+              }))
+            : [];
+          setOrders(mappedOrders);
+        } catch (err: any) {
+          // Do NOT fall back to fabricated sample data — show real error
+          setOrders([]);
+          setApiError(err?.message || 'Failed to load orders. Please try again.');
         } finally {
           setLoading(false);
         }
       } else {
-        setOrders(SAMPLE_ORDERS);
+        // Not authenticated — show empty state, not fake data
+        setOrders([]);
         setLoading(false);
       }
     };
@@ -306,9 +311,10 @@ setOrders(mappedApiOrders);
             </div>
             <button
               type="button"
+              onClick={() => categoryTabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })}
               className="p-2.5 bg-white border border-[#E5E2D9] rounded-lg text-stone-600 hover:text-stone-900 hover:bg-stone-50 transition-colors shadow-2xs cursor-pointer"
-              title="Filter"
-              aria-label="Filter"
+              title="Jump to filters"
+              aria-label="Jump to status filters"
             >
               <SlidersHorizontal className="w-4 h-4" />
             </button>
@@ -316,7 +322,7 @@ setOrders(mappedApiOrders);
         </div>
 
         {/* Category Tabs */}
-        <div className="flex items-center gap-2.5 overflow-x-auto pb-2 mb-8 no-scrollbar">
+        <div ref={categoryTabsRef} className="flex items-center gap-2.5 overflow-x-auto pb-2 mb-8 no-scrollbar">
           {categories.map((cat) => {
             const isActive = activeFilter === cat;
             return (
@@ -334,6 +340,20 @@ setOrders(mappedApiOrders);
             );
           })}
         </div>
+
+        {/* API Error Banner */}
+        {apiError && !loading && (
+          <div className="flex items-center gap-2.5 text-rose-700 text-xs bg-rose-50 border border-rose-200 rounded-xl p-4 mb-6">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
+            <span>{apiError}</span>
+            <button
+              onClick={() => { setApiError(null); window.location.reload(); }}
+              className="ml-auto text-rose-600 hover:text-rose-800 font-semibold underline cursor-pointer"
+            >
+              Retry
+            </button>
+          </div>
+        )}
 
         {/* Order Cards Container */}
         {loading ? (
