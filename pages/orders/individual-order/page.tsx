@@ -169,13 +169,13 @@ placedDate: new Date(data.order_timestamp || data.created_at || Date.now()).toLo
                 {/* Status Badges */}
                 <div className="flex items-center gap-2">
                   <span className="bg-[#FEF3C7] text-[#92400E] font-medium text-[11px] sm:text-xs px-3 py-1 rounded-full">
-                    Order ·
+                    Order · {order.orderStatus}
                   </span>
                   <span className="bg-[#FEF3C7] text-[#92400E] font-medium text-[11px] sm:text-xs px-3 py-1 rounded-full">
-                    Payment ·
+                    Payment · {order.paymentStatus}
                   </span>
                   <span className="bg-[#FEF3C7] text-[#92400E] font-medium text-[11px] sm:text-xs px-3 py-1 rounded-full">
-                    Delivery ·
+                    Delivery · {order.deliveryStatus}
                   </span>
                 </div>
               </div>
