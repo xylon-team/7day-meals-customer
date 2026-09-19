@@ -200,7 +200,8 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
             <span>Preferred Time Slot</span>
           </div>
           <div className="font-bold text-gray-900 text-sm sm:text-base">
-            {TIME_SLOT_LABELS[subscription.delivery_time_slot] || 'Lunch (11:30 AM - 1:30 PM)'}
+            {(subscription.delivery_time_slot && TIME_SLOT_LABELS[subscription.delivery_time_slot]) ||
+              'Lunch (11:30 AM - 1:30 PM)'}
           </div>
           <span className="text-[11px] text-stone-500 mt-1 inline-block">
             Delivered hot & insulated

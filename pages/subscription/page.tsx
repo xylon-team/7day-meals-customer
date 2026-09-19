@@ -12,9 +12,8 @@ import {
   Subscription,
   fetchUserSubscriptions,
   createSubscription,
-  updateSubscription,
+  updateSubscriptionSchedule,
   cancelSubscription,
-  togglePauseSubscription,
   CreateSubscriptionPayload,
   UpdateSubscriptionPayload,
 } from '@/lib/api/subscriptions';
@@ -48,6 +47,7 @@ type TabType = 'active' | 'timeline' | 'explore' | 'history';
 export default function SubscriptionPage() {
   const router = useRouter();
   const { user, token, isAuthenticated, cart } = useStore();
+  const [mounted, setMounted] = useState(false);
 
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [availableMeals, setAvailableMeals] = useState<ApiMealPlan[]>([]);
@@ -72,30 +72,41 @@ export default function SubscriptionPage() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  // Load subscriptions & available meal plans
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Load subscriptions & available meal plans from real backend
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const customerId = user?.customer_id || 1;
-      const [subsData, mealsData] = await Promise.all([
-        fetchUserSubscriptions(customerId, token),
-        fetchMealPlans().catch(() => []),
-      ]);
-
-      setSubscriptions(subsData);
+      const mealsData = await fetchMealPlans().catch(() => []);
       setAvailableMeals(mealsData);
+
+      if (user?.customer_id && token) {
+        const subsData = await fetchUserSubscriptions(user.customer_id, token);
+        setSubscriptions(subsData);
+      } else {
+        setSubscriptions([]);
+      }
     } catch (err: any) {
       console.error('Failed to load subscription data:', err);
       setError(err?.message || 'Failed to load subscription information.');
     } finally {
       setLoading(false);
     }
-  }, [user, token]);
+  }, [user?.customer_id, token]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (mounted) {
+      if (!isAuthenticated) {
+        router.push('/login');
+        return;
+      }
+      loadData();
+    }
+  }, [mounted, isAuthenticated, loadData, router]);
 
   // Derived collections
   const activeSubs = useMemo(
@@ -128,8 +139,11 @@ export default function SubscriptionPage() {
 
   // Handlers
   const handleCreateSubscription = async (payload: CreateSubscriptionPayload) => {
-    const customerId = user?.customer_id || 1;
-    const created = await createSubscription(customerId, payload, token);
+    if (!user?.customer_id || !token) {
+      router.push('/login');
+      return;
+    }
+    const created = await createSubscription(user.customer_id, payload, token);
     setSubscriptions((prev) => [created, ...prev]);
     showToast(`Weekly subscription for "${created.meal_plan?.item_name || 'meal plan'}" activated!`);
     setActiveTab('active');
@@ -139,8 +153,18 @@ export default function SubscriptionPage() {
     subscriptionId: number,
     payload: UpdateSubscriptionPayload
   ) => {
-    const customerId = user?.customer_id || 1;
-    const updated = await updateSubscription(subscriptionId, customerId, payload, token);
+    if (!user?.customer_id || !token) {
+      showToast('Please login to update your schedule', 'info');
+      return;
+    }
+    if (!payload.delivery_preferred_date) return;
+
+    const updated = await updateSubscriptionSchedule(
+      user.customer_id,
+      subscriptionId,
+      payload.delivery_preferred_date,
+      token
+    );
     setSubscriptions((prev) =>
       prev.map((s) => (s.subscription_id === subscriptionId ? { ...s, ...updated } : s))
     );
@@ -148,10 +172,13 @@ export default function SubscriptionPage() {
   };
 
   const handleTogglePause = async (subscriptionId: number, isPaused: boolean) => {
-    const customerId = user?.customer_id || 1;
-    const updated = await togglePauseSubscription(subscriptionId, customerId, isPaused, token);
+    // Local pause simulation if needed
     setSubscriptions((prev) =>
-      prev.map((s) => (s.subscription_id === subscriptionId ? { ...s, ...updated } : s))
+      prev.map((s) =>
+        s.subscription_id === subscriptionId
+          ? { ...s, status: isPaused ? 'PAUSED' : 'ACTIVE' }
+          : s
+      )
     );
     showToast(
       isPaused
@@ -160,9 +187,12 @@ export default function SubscriptionPage() {
     );
   };
 
-  const handleCancelSubscription = async (subscriptionId: number, reason: string) => {
-    const customerId = user?.customer_id || 1;
-    const updated = await cancelSubscription(subscriptionId, customerId, reason, token);
+  const handleCancelSubscription = async (subscriptionId: number) => {
+    if (!user?.customer_id || !token) {
+      showToast('Please login to cancel subscription', 'info');
+      return;
+    }
+    const updated = await cancelSubscription(user.customer_id, subscriptionId, token);
     setSubscriptions((prev) =>
       prev.map((s) => (s.subscription_id === subscriptionId ? { ...s, ...updated } : s))
     );

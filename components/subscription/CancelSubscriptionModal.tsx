@@ -9,18 +9,9 @@ interface CancelSubscriptionModalProps {
   isOpen: boolean;
   subscription: Subscription | null;
   onClose: () => void;
-  onConfirmCancel: (subscriptionId: number, reason: string) => Promise<void>;
+  onConfirmCancel: (subscriptionId: number) => Promise<void>;
   onSwitchToPause: (subscription: Subscription) => void;
 }
-
-const CANCEL_REASONS = [
-  'I am traveling or taking a break (Try pausing instead!)',
-  'Too much food / Portions are too large',
-  'Want to try a different meal plan',
-  'Delivery schedule or timing was inconvenient',
-  'Financial / Cost reasons',
-  'Other reason',
-];
 
 export const CancelSubscriptionModal: React.FC<CancelSubscriptionModalProps> = ({
   isOpen,
@@ -29,8 +20,6 @@ export const CancelSubscriptionModal: React.FC<CancelSubscriptionModalProps> = (
   onConfirmCancel,
   onSwitchToPause,
 }) => {
-  const [selectedReason, setSelectedReason] = useState<string>(CANCEL_REASONS[0]);
-  const [customReason, setCustomReason] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,8 +29,7 @@ export const CancelSubscriptionModal: React.FC<CancelSubscriptionModalProps> = (
     setLoading(true);
     setError(null);
     try {
-      const finalReason = selectedReason === 'Other reason' ? customReason : selectedReason;
-      await onConfirmCancel(subscription.subscription_id, finalReason);
+      await onConfirmCancel(subscription.subscription_id);
       onClose();
     } catch (err: any) {
       setError(err?.message || 'Failed to cancel subscription.');
@@ -81,7 +69,7 @@ export const CancelSubscriptionModal: React.FC<CancelSubscriptionModalProps> = (
         </p>
 
         {/* Alternative: Suggest Pausing */}
-        <div className="p-4 bg-teal-50/70 border border-teal-100 rounded-2xl mb-5 flex items-center justify-between gap-3">
+        <div className="p-4 bg-teal-50/70 border border-teal-100 rounded-2xl mb-6 flex items-center justify-between gap-3">
           <div>
             <span className="text-xs font-bold text-[#0D5C53] block">Going away for a while?</span>
             <span className="text-[11px] text-stone-600">
@@ -107,40 +95,6 @@ export const CancelSubscriptionModal: React.FC<CancelSubscriptionModalProps> = (
             <span>{error}</span>
           </div>
         )}
-
-        {/* Reason Selection */}
-        <div className="mb-6 space-y-2">
-          <label className="block text-xs font-bold text-gray-800 uppercase tracking-wider mb-2">
-            Please tell us why you are cancelling:
-          </label>
-          <div className="space-y-1.5">
-            {CANCEL_REASONS.map((reason) => (
-              <label
-                key={reason}
-                className="flex items-center gap-2.5 p-2.5 rounded-xl border border-stone-200 hover:bg-stone-50 cursor-pointer text-xs text-stone-700"
-              >
-                <input
-                  type="radio"
-                  name="cancel_reason"
-                  checked={selectedReason === reason}
-                  onChange={() => setSelectedReason(reason)}
-                  className="accent-[#0D5C53]"
-                />
-                <span>{reason}</span>
-              </label>
-            ))}
-          </div>
-
-          {selectedReason === 'Other reason' && (
-            <textarea
-              rows={2}
-              value={customReason}
-              onChange={(e) => setCustomReason(e.target.value)}
-              placeholder="Tell us what we could improve..."
-              className="w-full px-3.5 py-2 mt-2 rounded-xl border border-stone-300 text-xs focus:outline-none focus:ring-2 focus:ring-[#0D5C53]"
-            />
-          )}
-        </div>
 
         {/* Footer Actions */}
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-stone-100">

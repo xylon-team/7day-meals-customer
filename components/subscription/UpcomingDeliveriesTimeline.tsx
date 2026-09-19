@@ -73,7 +73,7 @@ export const UpcomingDeliveriesTimeline: React.FC<UpcomingDeliveriesTimelineProp
         cycleWeek: i + 1,
         date: cycleDate,
         subscription: sub,
-        timeSlot: TIME_SLOT_LABELS[sub.delivery_time_slot] || 'Lunch (11:30 AM - 1:30 PM)',
+        timeSlot: (sub.delivery_time_slot && TIME_SLOT_LABELS[sub.delivery_time_slot]) || 'Lunch (11:30 AM - 1:30 PM)',
         status: isSkipped ? 'skipped' : isPaused ? 'paused' : i === 0 ? 'confirmed' : 'upcoming',
       });
     }
