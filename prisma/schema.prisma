@@ -77,7 +77,7 @@ model customer_order {
 
 model delivery_feedback {
   feedback_id    Int            @id @default(autoincrement())
-  order_id       Int
+  order_id       Int            @unique
   rating_value   Int
   description    String?
   image_path     String?
