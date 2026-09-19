@@ -161,9 +161,7 @@ export default function OrdersPage() {
               paymentStatus: order.payment_status || 'PAID',
             }));
 
-            const existingIds = new Set(mappedApiOrders.map((o) => o.orderNumber));
-            const filteredSamples = SAMPLE_ORDERS.filter((s) => !existingIds.has(s.orderNumber));
-            setOrders([...mappedApiOrders, ...filteredSamples]);
+setOrders(mappedApiOrders);
           }
         } catch {
           setOrders(SAMPLE_ORDERS);
