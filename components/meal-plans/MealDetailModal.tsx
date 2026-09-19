@@ -6,7 +6,7 @@ import { fetchMealPlanById, ApiMealPlan, ApiMealPlanFoodItem } from '@/lib/api/m
 import { fetchReviewsByMealId, ReviewRecord } from '@/lib/api/reviews';
 import Badge from '@/components/Badge';
 import Button from '@/components/Button';
-import { X, Calendar, Utensils, AlertCircle, ShoppingBag, Star, MessageSquare } from 'lucide-react';
+import { X, Calendar, Utensils, AlertCircle, ShoppingBag, Star, MessageSquare, Repeat } from 'lucide-react';
 
 interface MealDetailModalProps {
   plan: MealPlan | null;
@@ -14,7 +14,7 @@ interface MealDetailModalProps {
   onAddToCart: (plan: MealPlan) => void;
 }
 
-Z// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function computeAverage(reviews: ReviewRecord[]): number {
   if (reviews.length === 0) return 0;
