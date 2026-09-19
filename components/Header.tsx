@@ -102,15 +102,15 @@ export const Header: React.FC<HeaderProps> = ({ cartCount, activeTab = 'Home' })
           </Link>
 
           {/* User Profile Pill */}
-          <Link href="/profile" className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity">
-            <div className="w-7 h-7 rounded-full bg-[#0E5A52] text-white flex items-center justify-center font-bold text-xs shadow-xs">
-              {mounted && isAuthenticated && displayName ? displayInitial : 'K'}
-            </div>
-            <span className="text-sm font-medium text-stone-800">
-              {mounted && isAuthenticated && displayName ? displayName : 'Kasun'}
-            </span>
-            <ChevronDown className="w-4 h-4 text-stone-500" />
-          </Link>
+          {mounted && isAuthenticated && (
+            <Link href="/profile" className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity">
+              <div className="w-7 h-7 rounded-full bg-[#0E5A52] text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                {displayInitial}
+              </div>
+              <span className="text-sm font-medium text-stone-800">{displayName}</span>
+              <ChevronDown className="w-4 h-4 text-stone-500" />
+            </Link>
+          )}
 
           {/* Logout Button — only show when authenticated */}
           {mounted && isAuthenticated && (
