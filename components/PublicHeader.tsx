@@ -26,7 +26,7 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({ activePage }) => {
     { label: 'About Us', href: '/about', id: 'about' },
     { label: 'Services', href: '/about#services', id: 'services' },
     { label: 'Meal Plans', href: '/meal-plans', id: 'meal-plans' },
-    { label: 'Contact Us', href: '/about#contact', id: 'contact' },
+    { label: 'Contact Us', href: '/contact', id: 'contact' },
   ];
 
   return (
