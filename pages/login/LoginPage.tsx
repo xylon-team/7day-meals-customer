@@ -4,8 +4,6 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
-import { PublicHeader } from '@/components/PublicHeader';
-import { Footer } from '@/components/Footer';
 import { useStore } from '@/store/useStore';
 
 interface FormErrors {
@@ -127,8 +125,6 @@ export default function LoginPage() {
 
           {/* Right Panel — Form */}
           <div className="flex-1 flex flex-col">
-            {/* Public Header inside right panel */}
-            <PublicHeader activePage="login" />
 
             <main className="flex-1 flex flex-col justify-center px-6 sm:px-10 lg:px-16 xl:px-24 py-10 max-w-xl w-full mx-auto lg:mx-0">
 
@@ -300,8 +296,6 @@ export default function LoginPage() {
 
               </form>
             </main>
-
-            <Footer />
           </div>
         </div>
       </div>

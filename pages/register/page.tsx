@@ -4,8 +4,6 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, AlertCircle, CheckCircle, Check } from 'lucide-react';
-import { PublicHeader } from '@/components/PublicHeader';
-import { Footer } from '@/components/Footer';
 import { useStore } from '@/store/useStore';
 
 interface FormErrors {
@@ -199,7 +197,6 @@ export default function RegisterPage() {
 
         {/* Right Panel — Form */}
         <div className="flex-1 flex flex-col">
-          <PublicHeader activePage="register" />
 
           <main className="flex-1 px-6 sm:px-10 lg:px-14 xl:px-20 py-8 max-w-2xl w-full mx-auto lg:mx-0">
 
@@ -468,8 +465,6 @@ export default function RegisterPage() {
 
             </form>
           </main>
-
-          <Footer />
         </div>
       </div>
     </div>

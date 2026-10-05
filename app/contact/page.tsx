@@ -235,13 +235,18 @@ export default function ContactPage() {
             </div>
           </div>
 
-          {/* Map Placeholder */}
-          <div className="w-full h-[400px] bg-stone-100 rounded-2xl border border-stone-200/60 overflow-hidden relative flex items-center justify-center shadow-inner group">
-            <div className="text-center text-gray-500 group-hover:scale-105 transition-transform duration-500">
-              <MapPin className="w-12 h-12 mx-auto mb-2 text-[#0D5C53]/50" />
-              <p className="font-medium text-gray-600">Google Maps Integration</p>
-              <p className="text-sm">Colombo 03, Sri Lanka</p>
-            </div>
+          {/* Google Maps Integration */}
+          <div className="w-full h-[400px] bg-stone-100 rounded-2xl border border-stone-200/60 overflow-hidden relative shadow-inner">
+            <iframe
+              title="7Day Meals Location"
+              src="https://maps.google.com/maps?q=123%20Galle%20Road,%20Colombo%2003,%20Sri%20Lanka&t=&z=15&ie=UTF8&iwloc=&output=embed"
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              allowFullScreen={true}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
           </div>
         </div>
       </main>
