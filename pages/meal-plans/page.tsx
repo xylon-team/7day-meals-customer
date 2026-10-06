@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { PublicHeader } from '@/components/PublicHeader';
 import { Footer } from '@/components/Footer';
@@ -14,6 +15,7 @@ import { ShoppingBag, Sparkles, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 
 export default function MealPlansPage() {
+  const router = useRouter();
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +28,7 @@ export default function MealPlansPage() {
   const { cart, addToCart, isAuthenticated } = useStore();
   const [mounted, setMounted] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<'success' | 'warning'>('success');
 
   useEffect(() => {
     setMounted(true);
@@ -55,8 +58,19 @@ export default function MealPlansPage() {
 
   // Add item to cart
   const handleAddToCart = (plan: MealPlan) => {
-    addToCart(plan);
-    setToastMessage(`"${plan.title}" added to cart!`);
+    if (!isAuthenticated) {
+      router.push('/login');
+      return;
+    }
+
+    const success = addToCart(plan);
+    if (!success) {
+      setToastMessage("You can only order one meal plan at a time.");
+      setToastType('warning');
+    } else {
+      setToastMessage(`"${plan.title}" added to cart!`);
+      setToastType('success');
+    }
     setTimeout(() => {
       setToastMessage(null);
     }, 3000);
@@ -107,8 +121,10 @@ export default function MealPlansPage() {
     <div className="min-h-screen bg-[#F9F8F6] text-gray-900 flex flex-col font-sans selection:bg-[#0D5C53] selection:text-white">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#0D5C53] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 text-sm font-medium border border-teal-600/40 animate-slide-up">
-          <ShoppingBag className="w-4 h-4 text-teal-200" />
+        <div className={`fixed bottom-6 right-6 z-50 px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 text-sm font-medium border animate-slide-up ${
+          toastType === 'warning' ? 'bg-red-500 text-white border-red-600' : 'bg-[#0D5C53] text-white border-teal-600/40'
+        }`}>
+          {toastType === 'warning' ? <AlertTriangle className="w-4 h-4" /> : <ShoppingBag className="w-4 h-4 text-teal-200" />}
           <span>{toastMessage}</span>
         </div>
       )}

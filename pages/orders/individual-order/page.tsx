@@ -7,6 +7,7 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { useStore } from '@/store/useStore';
 import { fetchOrderById } from '@/lib/api/orders';
+import { fetchMealPlanById, getMealImage } from '@/lib/api/meals';
 import { 
   ArrowLeft, 
   ClipboardList, 
@@ -74,8 +75,17 @@ export default function IndividualOrderPage() {
         setLoading(true);
         setFetchError(null);
         fetchOrderById(user.customer_id, numericId, token)
-          .then((data: any) => {
+          .then(async (data: any) => {
             if (data) {
+              let mealData: any = null;
+              if (data.meal_id) {
+                try {
+                  mealData = await fetchMealPlanById(data.meal_id);
+                } catch (err) {
+                  console.warn('Failed to fetch meal details for order', err);
+                }
+              }
+
               setOrder({
                 orderId: `#${data.order_id || numericId}`,
                 placedDate: new Date(data.order_timestamp || data.created_at || Date.now()).toLocaleString('en-US', {
@@ -99,11 +109,11 @@ export default function IndividualOrderPage() {
                 orderStatus: data.order_status || 'Pending',
                 paymentStatus: data.payment_status || 'Unpaid',
                 deliveryStatus: data.delivery_status || 'Not dispatched',
-                mealTitle: data.meal_name || 'Meal Plan',
-                mealDescription: data.meal_description || '',
-                mealTags: ['Weekly', 'Non-Veg'],
-                mealImage: '/sri_lankan_traditional_feast.png',
-                totalAmount: `Rs. ${data.total_amount ? Number(data.total_amount).toLocaleString() : '0'}`,
+                mealTitle: mealData ? mealData.item_name : (data.meal_name || 'Meal Plan'),
+                mealDescription: mealData ? mealData.description : (data.meal_description || ''),
+                mealTags: mealData ? [mealData.category, mealData.dietary_preference].filter(Boolean) : ['Weekly', 'Non-Veg'],
+                mealImage: getMealImage(mealData),
+                totalAmount: `Rs. ${mealData ? Number(mealData.price).toLocaleString() : (data.total_amount ? Number(data.total_amount).toLocaleString() : '0')}`,
                 customerId: data.customer_id || '',
                 mealId: data.meal_id || '',
                 riderId: data.rider_id || 'Not assigned',
@@ -389,12 +399,8 @@ export default function IndividualOrderPage() {
                       <span className="font-bold text-stone-900">{order.orderId}</span>
                     </div>
                     <div className="flex items-center justify-between py-2.5">
-                      <span className="text-stone-500">Customer ID</span>
-                      <span className="font-semibold text-stone-900">{order.customerId}</span>
-                    </div>
-                    <div className="flex items-center justify-between py-2.5">
-                      <span className="text-stone-500">Meal ID</span>
-                      <span className="font-semibold text-stone-900">{order.mealId}</span>
+                      <span className="text-stone-500">Customer</span>
+                      <span className="font-semibold text-stone-900">{user?.name || 'Customer'}</span>
                     </div>
                     <div className="flex items-center justify-between py-2.5">
                       <span className="text-stone-500">Rider ID</span>

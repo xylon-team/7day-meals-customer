@@ -1,68 +1,17 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { PublicHeader } from '@/components/PublicHeader';
 import { Footer } from '@/components/Footer';
-import { Check, ArrowRight, Heart, ShoppingBag, Star } from 'lucide-react';
+import { Check, ArrowRight, Heart, ShoppingBag, Star, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
 import { useStore } from '@/store/useStore';
-
-interface FeaturedMeal {
-  id: string;
-  name: string;
-  type: string;
-  category: string;
-  isVegetarian: boolean;
-  price: number;
-  image: string;
-  description: string;
-}
-
-const FEATURED_MEALS: FeaturedMeal[] = [
-  {
-    id: 'classic-sri-lankan-breakfast',
-    name: 'Classic Sri Lankan Breakfast',
-    type: 'Breakfast',
-    category: 'Vegetarian',
-    isVegetarian: true,
-    price: 850,
-    image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=800&q=80',
-    description: 'Traditional string hoppers served with creamy potato curry, spicy pol sambol, and rich dhal.',
-  },
-  {
-    id: 'chicken-rice-curry',
-    name: 'Chicken Rice & Curry',
-    type: 'Lunch',
-    category: 'Non-Veg',
-    isVegetarian: false,
-    price: 1200,
-    image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80',
-    description: 'Steamed red rice with authentic Sri Lankan chicken curry, tempered dhal, gotukola sambol, and papadam.',
-  },
-  {
-    id: 'fish-ambul-thiyal-dinner',
-    name: 'Fish Ambul Thiyal Dinner',
-    type: 'Dinner',
-    category: 'Non-Veg',
-    isVegetarian: false,
-    price: 1400,
-    image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=800&q=80',
-    description: 'Sour fish curry made with goraka, served with roast paan, dhal, and seeni sambol.',
-  },
-  {
-    id: 'vegetarian-rice-curry',
-    name: 'Vegetarian Rice & Curry',
-    type: 'Lunch',
-    category: 'Vegetarian',
-    isVegetarian: true,
-    price: 950,
-    image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=800&q=80',
-    description: 'White rice served with tender polos (jackfruit), tempered beetroot, dhal, and fresh green mallum.',
-  },
-];
+import { MealPlan } from '@/lib/data/meal-plans';
+import { fetchMealPlans, mapApiMealToMealPlan } from '@/lib/api/meals';
+import { MealCard } from '@/components/meal-plans/MealCard';
 
 export default function HomePage() {
   const router = useRouter();
@@ -70,22 +19,52 @@ export default function HomePage() {
   const [mounted, setMounted] = useState(false);
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<'success' | 'warning'>('success');
+  const [featuredMeals, setFeaturedMeals] = useState<MealPlan[]>([]);
+  const [loadingMeals, setLoadingMeals] = useState(true);
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollCarousel = (direction: 'left' | 'right') => {
+    if (scrollRef.current) {
+      const scrollAmount = 350; // Approximates card width + gap
+      scrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
+    fetchMealPlans()
+      .then(raw => {
+        const mapped = raw.map(mapApiMealToMealPlan);
+        setFeaturedMeals(mapped.slice(0, 8)); // Display up to 8 meals in carousel
+        setLoadingMeals(false);
+      })
+      .catch(err => {
+        console.error('Failed to load featured meals', err);
+        setLoadingMeals(false);
+      });
   }, []);
 
-  const handleAddToCart = (meal: FeaturedMeal) => {
-    addToCart({
-      id: meal.id,
-      title: meal.name,
-      name: meal.name,
-      category: meal.category,
-      price: meal.price,
-      image: meal.image,
-    });
+  const handleAddToCart = (meal: MealPlan) => {
+    if (!isAuthenticated) {
+      router.push('/login');
+      return;
+    }
 
-    setToastMessage(`"${meal.name}" added to cart!`);
+    const success = addToCart(meal);
+
+    if (!success) {
+      setToastMessage("You can only order one meal plan at a time.");
+      setToastType('warning');
+    } else {
+      setToastMessage(`"${meal.title}" added to cart!`);
+      setToastType('success');
+    }
+
     setTimeout(() => {
       setToastMessage(null);
     }, 3000);
@@ -102,8 +81,10 @@ export default function HomePage() {
     <div className="min-h-screen bg-[#FDFBF7] text-gray-900 flex flex-col font-sans">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#0D5C53] text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-up">
-          <ShoppingBag className="w-5 h-5 text-emerald-300" />
+        <div className={`fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-slide-up ${
+          toastType === 'warning' ? 'bg-red-500 text-white' : 'bg-[#0D5C53] text-white'
+        }`}>
+          {toastType === 'warning' ? <AlertTriangle className="w-5 h-5 text-red-100" /> : <ShoppingBag className="w-5 h-5 text-emerald-300" />}
           <span className="text-sm font-semibold">{toastMessage}</span>
         </div>
       )}
@@ -304,66 +285,48 @@ export default function HomePage() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {FEATURED_MEALS.map((meal) => (
-                <div
-                  key={meal.id}
-                  className="bg-white rounded-2xl shadow-sm border border-stone-200/80 overflow-hidden group hover:shadow-md transition-shadow duration-300 flex flex-col"
-                >
-                  <div className="relative h-48 sm:h-52 overflow-hidden bg-stone-100">
-                    <Image
-                      src={meal.image}
-                      alt={meal.name}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      unoptimized
-                    />
-                    <div className="absolute top-3 left-3 flex gap-2">
-                      <span className="bg-white/90 backdrop-blur-md text-stone-900 text-xs font-bold px-3 py-1 rounded-full shadow-xs">
-                        {meal.type}
-                      </span>
-                      {meal.isVegetarian && (
-                        <span className="bg-emerald-600/90 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full shadow-xs flex items-center gap-1">
-                          🌿 Veg
-                        </span>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => toggleFavorite(meal.id)}
-                      className="absolute top-3 right-3 w-8 h-8 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center text-stone-400 hover:text-rose-500 transition-colors shadow-xs"
-                      aria-label="Bookmark meal"
-                    >
-                      <Heart
-                        className={`w-4 h-4 ${
-                          favorites[meal.id]
-                            ? 'fill-rose-500 text-rose-500'
-                            : ''
-                        }`}
-                      />
-                    </button>
-                  </div>
+            {/* Horizontal Scroll Carousel */}
+            <div className="relative -mx-4 px-4 sm:mx-0 sm:px-0 mt-8 group/carousel">
+              {/* Fade edges */}
+              <div className="absolute top-0 bottom-0 left-0 w-12 bg-gradient-to-r from-[#FDFBF7] to-transparent z-10 pointer-events-none hidden sm:block opacity-0 group-hover/carousel:opacity-100 transition-opacity" />
+              <div className="absolute top-0 bottom-0 right-0 w-12 bg-gradient-to-l from-[#FDFBF7] to-transparent z-10 pointer-events-none hidden sm:block opacity-0 group-hover/carousel:opacity-100 transition-opacity" />
+              
+              {/* Navigation Buttons */}
+              <button
+                onClick={() => scrollCarousel('left')}
+                className="absolute left-0 top-1/2 -translate-y-1/2 -ml-5 w-12 h-12 bg-white rounded-full shadow-lg border border-stone-200 text-stone-600 hover:text-[#0D5C53] hover:scale-105 flex items-center justify-center z-20 opacity-0 group-hover/carousel:opacity-100 transition-all hidden sm:flex"
+                aria-label="Scroll left"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              
+              <button
+                onClick={() => scrollCarousel('right')}
+                className="absolute right-0 top-1/2 -translate-y-1/2 -mr-5 w-12 h-12 bg-white rounded-full shadow-lg border border-stone-200 text-stone-600 hover:text-[#0D5C53] hover:scale-105 flex items-center justify-center z-20 opacity-0 group-hover/carousel:opacity-100 transition-all hidden sm:flex"
+                aria-label="Scroll right"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
 
-                  <div className="p-5 flex flex-col flex-1">
-                    <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-1">
-                      {meal.name}
-                    </h3>
-                    <p className="text-sm text-stone-500 mb-4 line-clamp-2 flex-1 leading-relaxed">
-                      {meal.description}
-                    </p>
-                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-stone-100">
-                      <span className="font-bold text-[#0D5C53] text-xl">
-                        Rs. {meal.price}
-                      </span>
-                      <button
-                        onClick={() => handleAddToCart(meal)}
-                        className="bg-[#1E293B] hover:bg-[#0D5C53] text-white px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
-                      >
-                        Add to Cart
-                      </button>
+              <div 
+                ref={scrollRef}
+                className="flex overflow-x-auto gap-6 pb-8 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth"
+              >
+                {loadingMeals ? (
+                  [...Array(4)].map((_, i) => (
+                    <div key={i} className="min-w-[280px] sm:min-w-[320px] h-[400px] bg-stone-100 animate-pulse rounded-2xl flex-shrink-0 snap-center" />
+                  ))
+                ) : (
+                  featuredMeals.map((meal) => (
+                    <div
+                      key={meal.id}
+                      className="min-w-[280px] sm:min-w-[320px] max-w-[320px] flex-shrink-0 snap-center"
+                    >
+                      <MealCard plan={meal} onAddToCart={handleAddToCart} />
                     </div>
-                  </div>
-                </div>
-              ))}
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </section>

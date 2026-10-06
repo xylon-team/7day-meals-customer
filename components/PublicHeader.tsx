@@ -66,21 +66,8 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({ activePage }) => {
           })}
         </nav>
 
-        {/* Right: Cart Icon, Login / Register CTAs */}
+        {/* Right: Login / Register CTAs */}
         <div className="flex items-center gap-3">
-          {/* Shopping Cart Icon */}
-          <Link
-            href="/cart"
-            className="relative text-gray-700 hover:text-[#0D5C53] p-2 transition-colors cursor-pointer mr-1"
-            aria-label="Shopping Cart"
-          >
-            <ShoppingCart className="w-5 h-5 stroke-[1.8]" />
-            {displayCartCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-[#0D5C53] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center animate-scale-in">
-                {displayCartCount}
-              </span>
-            )}
-          </Link>
 
           <Link
             href="/login"

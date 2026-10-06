@@ -6,6 +6,7 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { useStore } from '@/store/useStore';
 import { fetchUserOrders } from '@/lib/api/orders';
+import { fetchMealPlans, mapApiMealToMealPlan } from '@/lib/api/meals';
 import { submitReview, fetchOrderReview } from '@/lib/api/reviews';
 import {
   Package,
@@ -145,24 +146,35 @@ export default function OrdersPage() {
       if (user?.customer_id && token) {
         try {
           const apiData = await fetchUserOrders(user.customer_id, token);
+          
+          // Fetch meals to populate order prices/names using meal_id
+          const rawMeals = await fetchMealPlans();
+          const mealMap = new Map(rawMeals.map(mapApiMealToMealPlan).map(m => [Number(m.id), m]));
+
           // Replace state with API result (even if empty array)
           const mappedOrders: OrderItem[] = Array.isArray(apiData)
-            ? apiData.map((order: any) => ({
-                id: `ord-${order.order_id}`,
-                orderNumber: `#ORD-${order.order_id}`,
-                rawId: String(order.order_id),
-                mealId: order.meal_id,
-                status: order.order_status || 'Processing',
-                date: new Date(order.order_timestamp || order.created_at || Date.now()).toLocaleDateString(
-                  'en-US',
-                  { month: 'short', day: 'numeric', year: 'numeric' },
-                ),
-                items: order.meal_name || order.items_description || `Meal Plan #${order.meal_id || '101'}`,
-                price: `Rs. ${order.total_amount || '0'}`,
-                rawPrice: order.total_amount || 0,
-                deliveryAddress: order.address || 'Colombo, Sri Lanka',
-                paymentStatus: order.payment_status || 'PAID',
-              }))
+            ? apiData.map((order: any) => {
+                const meal = mealMap.get(Number(order.meal_id));
+                const mealName = meal ? meal.title : (order.meal_name || order.items_description || `Meal Plan #${order.meal_id || '101'}`);
+                const priceNum = meal ? meal.price : (order.total_amount || 0);
+
+                return {
+                  id: `ord-${order.order_id}`,
+                  orderNumber: `#ORD-${order.order_id}`,
+                  rawId: String(order.order_id),
+                  mealId: order.meal_id,
+                  status: order.order_status || 'Processing',
+                  date: new Date(order.order_timestamp || order.created_at || Date.now()).toLocaleDateString(
+                    'en-US',
+                    { month: 'short', day: 'numeric', year: 'numeric' },
+                  ),
+                  items: mealName,
+                  price: `Rs. ${priceNum}`,
+                  rawPrice: priceNum,
+                  deliveryAddress: order.address || 'Colombo, Sri Lanka',
+                  paymentStatus: order.payment_status || 'PAID',
+                };
+              })
             : [];
           setOrders(mappedOrders);
         } catch (err: any) {

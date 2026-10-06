@@ -231,24 +231,22 @@ export function useStore() {
   };
 
   const addToCart = (item: any) => {
+    // Only allow 1 meal plan in the cart at a time
+    if (globalState.cart.length > 0) {
+      return false;
+    }
+
     const id = item.id;
     const name = item.title || item.name;
     const category = item.category;
     const price = item.price;
     const image = item.image;
 
-    const existingIndex = globalState.cart.findIndex((i) => i.id === id);
-    if (existingIndex > -1) {
-      globalState.cart[existingIndex] = {
-        ...globalState.cart[existingIndex],
-        quantity: globalState.cart[existingIndex].quantity + 1,
-      };
-    } else {
-      globalState.cart.push({ id, name, category, price, image, quantity: 1 });
-    }
+    globalState.cart.push({ id, name, category, price, image, quantity: 1 });
 
     saveCartToLocalStorage();
     notifyListeners();
+    return true;
   };
 
   const updateQuantity = (id: string | number, delta: number) => {
